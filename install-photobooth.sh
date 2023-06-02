@@ -526,7 +526,7 @@ add_git_remote() {
         fi
     else
         info "### Adding photoboothproject remote..."
-        git remote add photoboothproject https://github.com/PhotoboothProject/photobooth.git
+        git remote add photoboothproject https://github.com/Maybeerwan/photobooth.git
     fi
 }
 
@@ -574,13 +574,13 @@ start_git_install() {
 start_install() {
     info "### Now we are going to install Photobooth."
     if [ $GIT_INSTALL = true ]; then
-        git clone https://github.com/PhotoboothProject/photobooth $INSTALLFOLDER
+        git clone https://github.com/Maybeerwan/photobooth $INSTALLFOLDER
         cd $INSTALLFOLDERPATH
         add_git_remote
         start_git_install
     else
         info "### We are downloading the latest release and extracting it to $INSTALLFOLDERPATH."
-        curl -s https://api.github.com/repos/PhotoboothProject/photobooth/releases/latest |
+        curl -s https://api.github.com/repos/Maybeerwan/photobooth/releases/latest |
             jq '.assets[].browser_download_url | select(endswith(".tar.gz"))' |
             xargs curl -L --output /tmp/photobooth-latest.tar.gz
 
@@ -821,8 +821,8 @@ cups_setup() {
 
 gphoto_preview() {
     if [ -d "/etc/systemd/system" ] && [ -d "/usr" ]; then
-        wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/gphoto/ffmpeg-webcam.service -O "/etc/systemd/system/ffmpeg-webcam.service"
-        wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/gphoto/ffmpeg-webcam.sh -O "/usr/ffmpeg-webcam.sh"
+        wget https://raw.githubusercontent.com/Maybeerwan/photobooth/dev/gphoto/ffmpeg-webcam.service -O "/etc/systemd/system/ffmpeg-webcam.service"
+        wget https://raw.githubusercontent.com/Maybeerwan/photobooth/dev/gphoto/ffmpeg-webcam.sh -O "/usr/ffmpeg-webcam.sh"
         chmod +x "/usr/ffmpeg-webcam.sh"
         systemctl start ffmpeg-webcam.service
         systemctl enable ffmpeg-webcam.service

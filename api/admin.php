@@ -2,18 +2,18 @@
 header('Content-Type: application/json');
 
 require_once '../lib/config.php';
+require_once '../lib/helper.php';
 require_once '../lib/db.php';
 require_once '../lib/printdb.php';
 
-$LogData = [
-    'php' => basename($_SERVER['PHP_SELF']),
-];
+$Logger = new DataLogger(PHOTOBOOTH_LOG);
+$Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
 
 $data = $_POST;
 
 if (isset($data['type'])) {
     $newConfig = [];
-    $LogData[] = ['config' => 'Saving Photobooth configuration'];
+    $Logger->addLogData(['config' => 'Saving Photobooth configuration...']);
 
     foreach ($config as $k => $conf) {
         if (is_array($conf)) {
@@ -49,7 +49,7 @@ if (isset($data['type'])) {
             }
         } else {
             $newConfig['login']['enabled'] = false;
-            $LogData[] = ['login' => 'Password not set. Login disabled.'];
+            $Logger->addLogData(['login' => 'Password not set. Login disabled.']);
         }
     } else {
         $newConfig['login']['password'] = null;
@@ -57,23 +57,18 @@ if (isset($data['type'])) {
 
     if ($newConfig['preview']['camTakesPic'] && $newConfig['preview']['mode'] != 'device_cam' && $newConfig['preview']['mode'] != 'gphoto') {
         $newConfig['preview']['camTakesPic'] = false;
-        $LogData[] = [
-            'preview' => 'Device cam takes picture disabled. Can take images from preview only from gphoto2 and device cam preview.',
-        ];
+        $Logger->addLogData(['preview' => 'Device cam takes picture disabled. Can take images from preview only from gphoto2 and device cam preview.']);
     }
 
     if ($newConfig['ui']['style'] === 'custom') {
         if (
             !is_readable('../template/custom.template.php') &&
             !is_readable('../resources/css/custom_style.css') &&
-            !is_readable('../resources/css/custom_admin.css') &&
             !is_readable('../resources/css/custom_chromakeying.css') &&
-            !is_readable('../resources/css/custom_live_chromakeying.css')
+            !is_readable('../resources/css/custom_chromacapture.css')
         ) {
             $newConfig['ui']['style'] = 'modern_squared';
-            $LogData[] = [
-                'ui' => 'No custom style resources found. Falling back to modern squared style.',
-            ];
+            $Logger->addLogData(['ui' => 'No custom style resources found. Falling back to modern squared style.']);
         } else {
             if (!file_exists('../template/custom.template.php')) {
                 copy('../template/modern.template.php', '../template/custom.template.php');
@@ -81,14 +76,11 @@ if (isset($data['type'])) {
             if (!file_exists('../resources/css/custom_style.css')) {
                 copy('../resources/css/modern_style.css', '../resources/css/custom_style.css');
             }
-            if (!file_exists('../resources/css/custom_admin.css')) {
-                copy('../resources/css/modern_admin.css', '../resources/css/custom_admin.css');
-            }
             if (!file_exists('../resources/css/custom_chromakeying.css')) {
                 copy('../resources/css/modern_chromakeying.css', '../resources/css/custom_chromakeying.css');
             }
-            if (!file_exists('../resources/css/custom_live_chromakeying.css')) {
-                copy('../resources/css/modern_live_chromakeying.css', '../resources/css/custom_live_chromakeying.css');
+            if (!file_exists('../resources/css/custom_chromacapture.css')) {
+                copy('../resources/css/modern_chromacapture.css', '../resources/css/custom_chromacapture.css');
             }
         }
     }
@@ -96,15 +88,11 @@ if (isset($data['type'])) {
     if (SERVER_OS === 'windows') {
         if (!empty($newConfig['remotebuzzer']['enabled'])) {
             $newConfig['remotebuzzer']['enabled'] = false;
-            $LogData[] = [
-                'remotebuzzer' => 'Remotebuzzer server unsupported on Windows.',
-            ];
+            $Logger->addLogData(['remotebuzzer' => 'Remotebuzzer server unsupported on Windows.']);
         }
         if (!empty($newConfig['synctodrive']['enabled'])) {
             $newConfig['synctodrive']['enabled'] = false;
-            $LogData[] = [
-                'synctodrive' => 'Sync pictures to USB stick unsupported on Windows.',
-            ];
+            $Logger->addLogData(['synctodrive' => 'Sync pictures to USB stick unsupported on Windows.']);
         }
     }
 
@@ -124,9 +112,7 @@ if (isset($data['type'])) {
         if (isset($newConfig['get_request']['server']) && empty($newConfig['get_request']['server'])) {
             $newConfig['get_request']['countdown'] = false;
             $newConfig['get_request']['processed'] = false;
-            $LogData[] = [
-                'get_request' => 'No GET request server entered. Disabled GET request options.',
-            ];
+            $Logger->addLogData(['get_request' => 'No GET request server entered. Disabled GET request options.']);
         }
     }
 
@@ -145,36 +131,90 @@ if (isset($data['type'])) {
         $newConfig['collage']['limit'] = 4;
     }
 
-    //If there is a collage placeholder whithin the correct range (0 < placeholderposition <= collage limit), we need to decrease the collage limit by 1
+    // If there is a collage placeholder whithin the correct range (0 < placeholderposition <= collage limit), we need to decrease the collage limit by 1
     if ($newConfig['collage']['placeholder']) {
         $collagePlaceholderPosition = (int) $newConfig['collage']['placeholderposition'];
         if ($collagePlaceholderPosition > 0 && $collagePlaceholderPosition <= $newConfig['collage']['limit']) {
             $newConfig['collage']['limit'] = $newConfig['collage']['limit'] - 1;
         } else {
-            $newConfig['collage']['placeholderposition'] = false;
+            $newConfig['collage']['placeholder'] = false;
+            $Logger->addLogData(['collage' => 'Placeholder position not in range. Placeholder disabled.']);
+        }
+
+        if (empty($newConfig['collage']['placeholderpath']) || !is_array(getimagesize($newConfig['collage']['placeholderpath']))) {
+            $newConfig['collage']['placeholder'] = false;
+            $Logger->addLogData(['collage' => 'Collage Placeholder does not exist or is empty. Collage Placeholder disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['collage' => empty($newConfig['collage']['placeholderpath']) ? 'Empty.' : $newConfig['collage']['placeholderpath']]);
+        }
+    }
+
+    if ($newConfig['picture']['take_frame']) {
+        if (empty($newConfig['picture']['frame']) || !is_array(getimagesize($newConfig['picture']['frame']))) {
+            $newConfig['picture']['take_frame'] = false;
+            $Logger->addLogData(['frame' => 'Picture frame does not exist or is empty. Picture frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['picture']['frame']) ? 'Empty.' : $newConfig['picture']['frame']]);
+        }
+    }
+
+    if ($newConfig['collage']['take_frame']) {
+        if (empty($newConfig['collage']['frame']) || !is_array(getimagesize($newConfig['collage']['frame']))) {
+            $newConfig['collage']['take_frame'] = false;
+            $Logger->addLogData(['frame' => 'Collage frame does not exist or is empty. Collage frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['collage']['frame']) ? 'Empty.' : $newConfig['collage']['frame']]);
+        }
+    }
+
+    if ($newConfig['print']['print_frame']) {
+        if (empty($newConfig['print']['frame']) || !is_array(getimagesize($newConfig['print']['frame']))) {
+            $newConfig['print']['print_frame'] = false;
+            $Logger->addLogData(['frame' => 'Print frame does not exist or is empty. Printing frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['print']['frame']) ? 'Empty.' : $newConfig['print']['frame']]);
+        }
+    }
+
+    if ($newConfig['textonpicture']['enabled']) {
+        if (empty($newConfig['textonpicture']['font']) || !file_exists($newConfig['textonpicture']['font'])) {
+            $newConfig['textonpicture']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Picture font does not exist or is empty. Disabled text on picture. Note: Must be an absoloute path']);
+            $Logger->addLogData(['font' => empty($newConfig['textonpicture']['font']) ? 'Empty.' : $newConfig['textonpicture']['font']]);
+        }
+    }
+
+    if ($newConfig['textoncollage']['enabled']) {
+        if (empty($newConfig['textoncollage']['font']) || !file_exists($newConfig['textoncollage']['font'])) {
+            $newConfig['textoncollage']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Collage font does not exist or is empty. Disabled text on collage. Note: Must be an absoloute path.']);
+            $Logger->addLogData(['font' => empty($newConfig['textoncollage']['font']) ? 'Empty.' : $newConfig['textoncollage']['font']]);
+        }
+    }
+
+    if ($newConfig['textonprint']['enabled']) {
+        if (empty($newConfig['textonprint']['font']) || !file_exists($newConfig['textonprint']['font'])) {
+            $newConfig['textonprint']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Print font does not exist or is empty. Disabled text on print. Note: Must be an absoloute path.']);
+            $Logger->addLogData(['font' => empty($newConfig['textonprint']['font']) ? 'Empty.' : $newConfig['textonprint']['font']]);
         }
     }
 
     if ($newConfig['logo']['enabled']) {
-        if (empty($newConfig['logo']['path']) && !file_exists('..' . DIRECTORY_SEPARATOR . $newConfig['logo']['path'])) {
+        if (empty($newConfig['logo']['path']) || !is_array(getimagesize('..' . DIRECTORY_SEPARATOR . $newConfig['logo']['path']))) {
             $newConfig['logo']['enabled'] = false;
-            $LogData[] = ['logo' => 'Logo file path does not exist or is empty. Logo disabled'];
+            $Logger->addLogData(['logo' => 'Logo file path does not exist or is empty. Logo disabled.']);
         } else {
-            $newConfig['logo']['path'] = Helper::fix_seperator($newConfig['logo']['path']);
+            $newConfig['logo']['path'] = Helper::fixSeperator($newConfig['logo']['path']);
         }
     }
 
-    $content = "<?php\n\$config = " . var_export(arrayRecursiveDiff($newConfig, $defaultConfig), true) . ';';
+    $content = "<?php\n\$config = " . var_export(Helper::arrayRecursiveDiff($newConfig, $defaultConfig), true) . ';';
 
     if (file_put_contents($my_config_file, $content)) {
-        clearCache($my_config_file);
-        $LogData[] = ['config' => 'New config saved'];
+        Helper::clearCache($my_config_file);
+        $Logger->addLogData(['config' => 'New config saved']);
 
         if ($data['type'] == 'reset') {
-            $LogData[] = ['reset' => 'Resetting Photobooth'];
-
+            $Logger->addLogData(['reset' => 'Resetting Photobooth']);
             if ($newConfig['reset']['remove_images']) {
-                $LogData[] = ['remove_images' => 'Removing images'];
+                $Logger->addLogData(['remove_images' => 'Removing images']);
                 // empty folders
                 foreach ($config['foldersAbs'] as $folder) {
                     if ($folder != $config['foldersAbs']['archives'] && $folder != $config['foldersAbs']['private']) {
@@ -185,33 +225,37 @@ if (isset($data['type'])) {
                                 if (is_file($file)) {
                                     // delete file
                                     unlink($file);
-                                    $LogData[] = [$file => 'deleted'];
+                                    $Logger->addLogData([$file => 'deleted']);
                                 }
                             }
                         }
                     } else {
-                        $LogData[] = [$folder => 'skipped'];
+                        $Logger->addLogData([$folder => 'skipped']);
                     }
                 }
             }
 
             if ($newConfig['reset']['remove_print_db']) {
+                $printManager = new PrintManager();
+                $printManager->printDb = PRINT_DB;
+                $printManager->printLockFile = PRINT_LOCKFILE;
+                $printManager->printCounter = PRINT_COUNTER;
                 // delete print database
-                if (removePrintDB()) {
-                    $LogData[] = ['printed.csv' => 'deleted'];
+                if ($printManager->removePrintDb()) {
+                    $Logger->addLogData(['printed.csv' => 'deleted']);
                 }
-                if (unlockPrint()) {
-                    $LogData[] = ['print.lock' => 'deleted'];
+                if ($printManager->unlockPrint()) {
+                    $Logger->addLogData(['print.lock' => 'deleted']);
                 }
-                if (removePrintCounter()) {
-                    $LogData[] = ['print.count' => 'deleted'];
+                if ($printManager->removePrintCounter()) {
+                    $Logger->addLogData(['print.count' => 'deleted']);
                 }
             }
 
             if ($newConfig['reset']['remove_mailtxt']) {
                 if (is_file(MAIL_FILE)) {
                     unlink(MAIL_FILE); // delete file
-                    $LogData[] = [MAIL_FILE => 'deleted'];
+                    $Logger->addLogData([MAIL_FILE => 'deleted']);
                 }
             }
 
@@ -219,7 +263,7 @@ if (isset($data['type'])) {
                 // delete personal config
                 if (is_file('../config/my.config.inc.php')) {
                     unlink('../config/my.config.inc.php');
-                    $LogData[] = ['my.config.inc.php' => 'deleted'];
+                    $Logger->addLogData(['my.config.inc.php' => 'deleted']);
                 }
             }
 
@@ -229,7 +273,7 @@ if (isset($data['type'])) {
                 if (is_file($logFile)) {
                     // delete file
                     unlink($logFile);
-                    $LogData[] = [$logFile => 'deleted'];
+                    $Logger->addLogData([$logFile => 'deleted']);
                 }
             }
 
@@ -237,51 +281,21 @@ if (isset($data['type'])) {
             if (is_file(DB_FILE)) {
                 // delete file
                 unlink(DB_FILE);
-                $LogData[] = [DB_FILE => 'deleted'];
+                $Logger->addLogData([DB_FILE => 'deleted']);
             }
         }
         echo json_encode('success');
     } else {
-        $LogData[] = ['config' => 'ERROR: Config can not be saved!'];
-
+        $Logger->addLogData(['config' => 'ERROR: Config can not be saved!']);
         echo json_encode('error');
     }
 } else {
-    $LogData[] = ['type' => 'ERROR: Unknown action.'];
-    logError($LogData);
+    $Logger->addLogData(['type' => 'ERROR: Unknown action.']);
+    $Logger->logToFile();
     die(json_encode('error'));
 }
-logError($LogData);
+$Logger->logToFile();
 
 /* Kill service daemons after config has changed */
 require_once '../lib/services_stop.php';
-
-function arrayRecursiveDiff($aArray1, $aArray2) {
-    $aReturn = [];
-
-    foreach ($aArray1 as $mKey => $mValue) {
-        if (array_key_exists($mKey, $aArray2)) {
-            if (is_array($mValue)) {
-                $aRecursiveDiff = arrayRecursiveDiff($mValue, $aArray2[$mKey]);
-                if (count($aRecursiveDiff)) {
-                    $aReturn[$mKey] = $aRecursiveDiff;
-                }
-            } else {
-                if ($mValue != $aArray2[$mKey]) {
-                    $aReturn[$mKey] = $mValue;
-                }
-            }
-        } else {
-            $aReturn[$mKey] = $mValue;
-        }
-    }
-    return $aReturn;
-}
-
-function clearCache($file) {
-    if (function_exists('opcache_invalidate') && strlen(ini_get('opcache.restrict_api')) < 1) {
-        opcache_invalidate($file, true);
-    } elseif (function_exists('apc_compile_file')) {
-        apc_compile_file($file);
-    }
-}
+exit();

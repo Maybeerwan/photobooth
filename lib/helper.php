@@ -1,123 +1,185 @@
 <?php
 require_once __DIR__ . '/log.php';
 
-class Photobooth {
-    public $server_ip;
-    public $os;
-    public $webRoot;
-    public $photoboothRoot;
-    public $isSubfolderInstall;
-    public $version;
-
-    function __construct() {
-        $this->server_ip = $this->get_ip();
-        $this->os = $this->server_os();
-        $this->webRoot = $this->get_web_root();
-        $this->photoboothRoot = Helper::get_rootpath();
-        $this->isSubfolderInstall = $this->detect_subfolder_install();
-        $this->version = $this->get_photobooth_version();
-    }
-
-    public static function server_os() {
-        return DIRECTORY_SEPARATOR == '\\' || strtolower(substr(PHP_OS, 0, 3)) === 'win' ? 'windows' : 'linux';
-    }
-
-    public static function get_ip() {
-        return self::server_os() == 'linux' ? shell_exec('hostname -I | cut -d " " -f 1') : $_SERVER['HTTP_HOST'];
-    }
-
-    public static function get_web_root() {
-        return self::server_os() == 'linux' ? $_SERVER['DOCUMENT_ROOT'] : str_replace('/', '\\', $_SERVER['DOCUMENT_ROOT']);
-    }
-
-    public static function get_photobooth_version() {
-        $packageJson = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'package.json';
-        if (is_file($packageJson)) {
-            $packageContent = file_get_contents($packageJson);
-            $package = json_decode($packageContent, true);
-            return $package['version'];
-        } else {
-            return 'unknown';
-        }
-    }
-
-    public static function detect_subfolder_install() {
-        return empty(Helper::get_rootpath()) ? false : true;
-    }
-
-    public static function get_url() {
-        if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') {
-            $protocol = 'https';
-        } else {
-            $protocol = 'http';
-        }
-        if (self::detect_subfolder_install()) {
-            $url = $protocol . '://' . self::get_ip() . Helper::get_rootpath();
-        } else {
-            $url = $protocol . '://' . self::get_ip();
-        }
-        return Helper::fix_seperator($url);
-    }
-}
-
+/**
+ * A collection of helper functions used throughout the photobooth application.
+ */
 class Helper {
-    public static function get_rootpath($relative_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR) {
-        return str_replace(Photobooth::get_web_root(), '', realpath($relative_path));
+    /**
+     * @var string[] Array of unit labels.
+     */
+    private static $units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+
+    /**
+     * Get the relative path of a file or directory.
+     *
+     * @param string $relative_path The path to the file or directory relative to the application root.
+     *
+     * @return string The relative path of the file or directory.
+     */
+    public static function getRootpath($relative_path = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR) {
+        return str_replace(Photobooth::getWebRoot(), '', realpath($relative_path));
     }
 
-    public static function fix_seperator($fix_path) {
-        return str_replace('\\', '/', $fix_path);
+    /**
+     * Fix path separators to use forward slashes instead of backslashes.
+     *
+     * @param string $fixPath The path to be fixed.
+     *
+     * @return string The fixed path.
+     */
+    public static function fixSeperator($fixPath) {
+        $fixPath = stripslashes($fixPath);
+        return str_replace('\\', '/', $fixPath);
     }
 
-    public static function set_absolute_path($path) {
-        if ($path[0] != '/') {
+    /**
+     * Set an absolute path by adding a leading slash if necessary.
+     *
+     * @param string $path The path to be set as absolute.
+     *
+     * @return string The absolute path.
+     */
+    public static function setAbsolutePath($path) {
+        if (!empty($path) && $path[0] != '/') {
             $path = '/' . $path;
         }
         return $path;
     }
-}
 
-class Image {
-    public $newFilename;
+    /**
+     * Recursively compares two arrays and returns the differences between them.
+     *
+     * @param array $array1 The first array to compare.
+     * @param array $array2 The second array to compare.
+     *
+     * @return array The array containing the differences between $array1 and $array2.
+     */
+    public static function arrayRecursiveDiff($array1, $array2) {
+        $returnArray = [];
 
-    public static function create_new_filename($naming = 'random', $ext = '.jpg') {
-        if ($naming === 'dateformatted') {
-            $name = date('Ymd_His') . $ext;
-        } else {
-            $name = md5(microtime()) . $ext;
+        foreach ($array1 as $key => $value) {
+            if (array_key_exists($key, $array2)) {
+                if (is_array($value)) {
+                    $recursiveDiff = self::arrayRecursiveDiff($value, $array2[$key]);
+                    if (count($recursiveDiff)) {
+                        $returnArray[$key] = $recursiveDiff;
+                    }
+                } else {
+                    if ($value != $array2[$key]) {
+                        $returnArray[$key] = $value;
+                    }
+                }
+            } else {
+                $returnArray[$key] = $value;
+            }
         }
-        return $name;
+
+        return $returnArray;
     }
 
-    function set_new_filename($naming) {
-        $this->newFilename = $this->create_new_filename($naming);
+    /**
+     * Clears the cache for a specific file.
+     *
+     * @param string $file The path to the file for which the cache should be cleared.
+     *
+     * @return void
+     */
+    public static function clearCache($file) {
+        if (function_exists('opcache_invalidate') && strlen(ini_get('opcache.restrict_api')) < 1) {
+            opcache_invalidate($file, true);
+        } elseif (function_exists('apc_compile_file')) {
+            apc_compile_file($file);
+        }
     }
 
-    function get_new_filename() {
-        return $this->newFilename;
+    /**
+     * Calculates the total size of a folder and its subfolders recursively.
+     *
+     * @param string $path The path to the folder.
+     *
+     * @return int The total size of the folder in bytes.
+     *
+     * @throws Exception If the provided path is not a valid directory.
+     */
+    public static function getFolderSize($path) {
+        if (!is_dir($path)) {
+            throw new Exception('Invalid directory path: ' . $path);
+        }
+
+        $totalSize = 0;
+        $files = scandir($path);
+        $cleanPath = rtrim($path, '/') . '/';
+
+        if ($files === false) {
+            throw new Exception('Failed to read directory: ' . $path);
+        }
+
+        foreach ($files as $file) {
+            if ($file != '.' && $file != '..') {
+                $currentFile = $cleanPath . $file;
+                if (is_dir($currentFile)) {
+                    $size = self::getFolderSize($currentFile);
+                    $totalSize += $size;
+                } else {
+                    $size = filesize($currentFile);
+                    if ($size === false) {
+                        throw new Exception('Failed to get size of file: ' . $currentFile);
+                    }
+                    $totalSize += $size;
+                }
+            }
+        }
+
+        return $totalSize;
     }
 
-    function set_and_get_new_filename($naming) {
-        $this->set_new_filename($naming);
-        return $this->newFilename;
-    }
-}
+    /**
+     * Formats the given size in bytes to a human-readable format.
+     *
+     * @param int $size The size in bytes.
+     * @return string The formatted size with unit label.
+     */
+    public static function formatSize($size) {
+        $mod = 1024;
 
-function testFile($file) {
-    if (is_dir($file)) {
-        $ErrorData = [
-            'error' => $file . ' is a path! Frames need to be PNG, Fonts need to be ttf!',
-        ];
-        logError($ErrorData);
-        return false;
+        for ($i = 0; $size > $mod; $i++) {
+            $size /= $mod;
+        }
+
+        $endIndex = strpos($size, '.') + 3;
+
+        return substr($size, 0, $endIndex) . ' ' . self::$units[$i];
     }
 
-    if (!file_exists($file)) {
-        $ErrorData = [
-            'error' => $file . ' does not exist!',
-        ];
-        logError($ErrorData);
-        return false;
+    /**
+     * Counts the number of files in the given directory.
+     *
+     * @param string $path The path to the directory.
+     *
+     * @return int The number of files in the directory.
+     *
+     * @throws Exception If the provided path is not a valid directory or an error occurs while reading the directory.
+     *
+     */
+    public static function getFileCount($path) {
+        if (!is_dir($path)) {
+            throw new Exception('Invalid directory path: ' . $path);
+        }
+
+        $fileCount = 0;
+        $fi = new FilesystemIterator($path, FilesystemIterator::SKIP_DOTS);
+
+        if ($fi === false) {
+            throw new Exception('Failed to read directory: ' . $path);
+        }
+
+        foreach ($fi as $file) {
+            if ($file->isFile()) {
+                $fileCount++;
+            }
+        }
+
+        return $fileCount;
     }
-    return true;
 }

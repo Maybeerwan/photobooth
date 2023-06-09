@@ -2,6 +2,7 @@ archives/
 bower_components/
 config/*
 !config/config.inc.php
+!config/tailwind.admin.config.js
 data/
 digicamcontrol/
 HEAD
@@ -15,6 +16,7 @@ resources/css/*
 !resources/css/README.md
 resources/js/*
 !resources/js/README.md
+src/sass/custom_chromacapture.css
 src/sass/custom_chromakeying.css
 src/sass/custom_live_chromakeying.css
 src/sass/custom_style.scss
@@ -27,6 +29,7 @@ vendor/simple-translator/
 /.htaccess
 .htpasswd
 *.patch
+/welcome/.skip_welcome
 .skip_welcome
 .vscode
 venv/

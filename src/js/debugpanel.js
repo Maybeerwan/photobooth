@@ -2,20 +2,20 @@ $(function () {
     let autoRefreshActive = false;
 
     // Click on nav bar element populates content page
-    $('.adminnavlistelement').click(function (e) {
+    $('.debugNavItem').on('click', function (e) {
         e.preventDefault();
         $('.adminnavlistelement').removeClass('active');
         $(this).addClass('active');
 
         $.ajax({
-            url: '../api/serverInfo.php',
+            url: '../../api/serverInfo.php',
             method: 'GET',
             dataType: 'text',
             data: {
                 content: this.id
             },
             success: (data) => {
-                $('.debugcontent').html('<pre>' + data + '</pre>');
+                $('.debugcontent').html('<pre class="break-all whitespace-pre-wrap">' + data + '</pre>');
                 if (autoRefreshActive) {
                     $('html,body').animate({scrollTop: $('#admincontentpage').height()}, 0);
                 }

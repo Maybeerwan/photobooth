@@ -3,14 +3,14 @@ session_start();
 
 require_once 'lib/config.php';
 if (!$config['ui']['skip_welcome']) {
-    if (!is_file('.skip_welcome')) {
-        header('location: welcome.php');
+    if (!is_file('welcome/.skip_welcome')) {
+        header('location: welcome/');
         exit();
     }
 }
 
-if ($config['live_keying']['enabled']) {
-    header('location: livechroma.php');
+if ($config['chromaCapture']['enabled']) {
+    header('location: chromacapture.php');
     exit();
 }
 
@@ -23,12 +23,14 @@ if (
     require_once 'lib/db.php';
     require_once 'lib/filter.php';
 
+    $database = new DatabaseManager();
+    $database->db_file = DB_FILE;
+    $database->file_dir = IMG_DIR;
     if ($config['database']['enabled']) {
-        $images = getImagesFromDB();
+	$images = $database->getContentFromDB();
     } else {
-        $images = getImagesFromDirectory($config['foldersAbs']['images']);
+	$images = $database->getFilesFromDirectory();
     }
-
     $imagelist = $config['gallery']['newest_first'] === true && !empty($images) ? array_reverse($images) : $images;
 
     $btnClass = 'btn btn--' . $config['ui']['button'];

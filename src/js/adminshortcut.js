@@ -9,7 +9,7 @@ function countreset() {
 // eslint-disable-next-line no-unused-vars
 function adminsettings() {
     if (admincount == 3) {
-        window.location.href = 'login/index.php';
+        window.location.href = '/login';
     }
     photoboothTools.console.log(admincount);
     admincount++;

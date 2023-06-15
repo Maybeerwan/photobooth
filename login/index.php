@@ -1,7 +1,8 @@
 <?php
 session_start();
+$fileRoot = '../';
 
-require_once('../lib/config.php');
+require_once($fileRoot . 'lib/config.php');
 
 // LOGIN
 $username = $config['login']['username'];
@@ -19,10 +20,9 @@ if (isset($_POST['submit'])) {
 }
 // END LOGIN
 
-$fileRoot = '../';
 $pageTitle = 'Login';
-include('../admin/components/head.admin.php');
-include('../admin/helper/index.php');
+include($fileRoot . 'admin/components/head.admin.php');
+include($fileRoot . 'admin/helper/index.php');
 
 $labelClass = 'w-full flex flex-col mb-1';
 $inputClass = 'w-full h-10 border border-solid border-gray-300 focus:border-brand-1 rounded-md px-3 mt-auto';
@@ -43,7 +43,7 @@ $btnClass = 'w-full h-12 rounded-full bg-brand-1 text-white flex items-center ju
 					</div>
 
 					<div class="w-full text-center text-gray-500 mb-8">
-						Bitte logge dich ein um fortzufahren.
+						<span data-i18n="login_please"></span>
 					</div>
 
 					<!-- user -->
@@ -75,12 +75,14 @@ $btnClass = 'w-full h-12 rounded-full bg-brand-1 text-white flex items-center ju
 		<div class="w-full max-w-xl rounded-lg py-8 bg-white flex flex-col shadow-xl relative">
 
 			<div class="px-4">
-				<h1 class="text-2xl font-bold text-center mb-6 border-solid border-b border-gray-200 pb-4 text-brand-1">Menü</h1>
+				<h1 class="text-2xl font-bold text-center mb-6 border-solid border-b border-gray-200 pb-4 text-brand-1">
+					<span data-i18n="menu"></span>
+				</h1>
 			</div>
 
 			<?php if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
 			<div class="w-12 h-12 bg-white absolute right-4 top-4 rounded-b-l-lg shadow-xls flex items-center justify-center text-brand-1 cursor-pointer">
-				<a href="/" >
+				<a href="<?=$fileRoot?>" >
 					<i class="!text-2xl <?php echo $config['icons']['close']; ?>"></i>
 					<!-- <span data-i18n="close"></span> -->
 				</a>
@@ -93,23 +95,23 @@ $btnClass = 'w-full h-12 rounded-full bg-brand-1 text-white flex items-center ju
 						echo getMenuBtn('/admin', 'admin_panel', $config['icons']['admin']);
 					}
 
-					echo getMenuBtn('/gallery.php', 'gallery', $config['icons']['gallery']);
-					echo getMenuBtn('/slideshow', 'slideshow', $config['icons']['slideshow']);
+					echo getMenuBtn($fileRoot . 'gallery', 'gallery', $config['icons']['gallery']);
+					echo getMenuBtn($fileRoot . 'slideshow', 'slideshow', $config['icons']['slideshow']);
 
 					if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
-						echo getMenuBtn('/chromacapture.php', 'chromaCapture', $config['icons']['chromaCapture']);
+						echo getMenuBtn($fileRoot . 'chroma', 'chromaCapture', $config['icons']['chromaCapture']);
 					}
 
 					if(!$config['protect']['manual'] || (!$config['protect']['localhost_manual'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
-						echo getMenuBtn('/faq', 'show_faq', $config['icons']['faq']);
-						echo getMenuBtn('/manual', 'show_manual', $config['icons']['manual']);
+						echo getMenuBtn($fileRoot . 'faq', 'show_faq', $config['icons']['faq']);
+						echo getMenuBtn($fileRoot . 'manual', 'show_manual', $config['icons']['manual']);
 						echo getMenuBtn('https://t.me/PhotoboothGroup', 'telegram', $config['icons']['telegram']);
 					}
 
 					// echo getMenuBtn("/", "reload", $config['icons']['refresh']);
 
 					if(isset($_SESSION['auth']) && $_SESSION['auth'] === true) {
-						echo getMenuBtn('/login/logout.php', 'logout', $config['icons']['logout']);
+						echo getMenuBtn($fileRoot . 'login/logout.php', 'logout', $config['icons']['logout']);
 					}
 
 				?>
@@ -123,5 +125,5 @@ $btnClass = 'w-full h-12 rounded-full bg-brand-1 text-white flex items-center ju
 
 
 <?php
-    include('../admin/components/footer.admin.php');
+    include($fileRoot . 'admin/components/footer.admin.php');
 ?>

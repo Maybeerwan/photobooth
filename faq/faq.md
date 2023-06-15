@@ -736,7 +736,7 @@ Tested working setup:
 
 ### How to only open the gallery to avoid people taking pictures?
 
-Open [http://localhost/gallery.php](http://localhost/gallery.php) in your browser (you can replace `localhost` with your IP adress).
+Open [http://localhost/gallery](http://localhost/gallery) in your browser (you can replace `localhost` with your IP adress).
 
 ---
 
@@ -809,7 +809,7 @@ Use the `install-photobooth.sh` script to get the operating system setup in plac
 **Note:** If you have declined the question to enable the USB sync file backup while running the `install-photobooth.sh` you need to run the following commands to get the operating system setup done:
 
 ```sh
-wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/enable-usb-sync.sh
+wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/scripts/enable-usb-sync.sh
 sudo bash enable-usb-sync.sh -username='<YourUsername>'
 ```
 

@@ -75,7 +75,6 @@ const photoBooth = (function () {
         notificationTimeout = config.ui.notification_timeout * 1000;
 
     let timeOut,
-        isPrinting = false,
         chromaFile = '',
         currentCollageFile = '',
         imgFilter = config.filters.defaults,
@@ -86,6 +85,8 @@ const photoBooth = (function () {
 
     api.takingPic = false;
     api.nextCollageNumber = 0;
+    api.chromaimage = '';
+    api.filename = '';
 
     api.isTimeOutPending = function () {
         return typeof timeOut !== 'undefined';
@@ -425,7 +426,7 @@ const photoBooth = (function () {
         }
         startTime = new Date().getTime();
         jQuery
-            .post('api/takePic.php', data)
+            .post('api/capture.php', data)
             .done(function (result) {
                 endTime = new Date().getTime();
                 totalTime = endTime - startTime;
@@ -604,7 +605,7 @@ const photoBooth = (function () {
         }
         startTime = new Date().getTime();
         jQuery
-            .post('api/takeVideo.php', data)
+            .post('api/capture.php', data)
             .done(function (result) {
                 if (config.video.animation) {
                     videoAnimation.hide();
@@ -657,7 +658,7 @@ const photoBooth = (function () {
                     photoboothTools.reloadPage();
                 }, notificationTimeout);
             } else {
-                loading.append($('<a class="btn" href="./">').text(photoboothTools.getTranslation('reload')));
+                loading.append($('<a class="btn" href="/">').text(photoboothTools.getTranslation('reload')));
             }
         }, 500);
     };
@@ -783,25 +784,15 @@ const photoBooth = (function () {
     };
 
     api.renderChroma = function (filename) {
-        if (config.live_keying.show_all) {
+        api.filename = filename;
+
+        if (config.keying.show_all) {
             api.addImage(filename);
         }
-        const imageUrl = config.live_keying.show_all
-            ? config.foldersJS.images + '/' + filename
-            : config.foldersJS.keying + '/' + filename;
-        const preloadImage = new Image();
+        loader.hide();
 
-        preloadImage.onload = function () {
-            $('body').attr('data-main-image', filename);
-            photoboothTools.console.log('Chroma image: ' + config.foldersJS.keying + '/' + filename);
-            const chromaimage = config.foldersJS.keying + '/' + filename;
-
-            loader.hide();
-            api.chromaimage = filename;
-            setMainImage(chromaimage);
-        };
-
-        preloadImage.src = imageUrl;
+        const chromaimage = config.foldersJS.keying + '/' + filename;
+        setMainImage(chromaimage, true, filename);
 
         api.takingPic = false;
         remoteBuzzerClient.inProgress(false);
@@ -840,6 +831,7 @@ const photoBooth = (function () {
     };
 
     api.renderPic = function (filename, files) {
+        api.filename = filename;
         api.showQr('#qrCode', filename);
 
         $(document).off('click touchstart', '.printbtn');
@@ -847,14 +839,17 @@ const photoBooth = (function () {
             e.preventDefault();
             e.stopPropagation();
 
-            api.printImage(filename, () => {
+            photoboothTools.printImage(filename, () => {
+                remoteBuzzerClient.inProgress(false);
                 printBtn.blur();
             });
         });
 
         if (config.print.auto) {
             setTimeout(function () {
-                api.printImage(filename);
+                photoboothTools.printImage(filename, () => {
+                    remoteBuzzerClient.inProgress(false);
+                });
             }, config.print.auto_delay);
         }
 
@@ -882,12 +877,12 @@ const photoBooth = (function () {
             });
 
         // gallery doesn't support videos atm
-        if (!api.isVideoFile(filename)) {
+        if (!photoboothTools.isVideoFile(filename)) {
             api.addImage(filename);
         }
 
         // if image is a video render the qr code as image (video should be displayed over this)
-        const imageUrl = api.isVideoFile(filename)
+        const imageUrl = photoboothTools.isVideoFile(filename)
             ? 'api/qrcode.php?filename=' + filename
             : config.foldersJS.images + '/' + filename;
 
@@ -907,7 +902,15 @@ const photoBooth = (function () {
 
             loader.css('background-image', 'url()');
             loader.removeClass('showBackgroundImage');
-
+            if (config.qr.enabled && config.qr.result != 'hidden') {
+                $(
+                    '<img src="api/qrcode.php?filename=' +
+                        filename +
+                        '" alt="qr code" id="resultQR" class="' +
+                        config.qr.result +
+                        '"/>'
+                ).appendTo(resultPage);
+            }
             if (!mySideNav.hasClass('sidenav--open')) {
                 rotaryController.focusSet('#result');
             }
@@ -1047,87 +1050,6 @@ const photoBooth = (function () {
         }
 
         timerFunction();
-    };
-
-    api.isVideoFile = function (filename) {
-        const extension = api.getFileExtension(filename);
-
-        return extension === 'mp4' || extension === 'gif';
-    };
-
-    api.getFileExtension = function (filename) {
-        const parts = filename.split('.');
-
-        return parts[parts.length - 1];
-    };
-
-    api.resetPrintErrorMessage = function (cb, to) {
-        setTimeout(function () {
-            photoboothTools.modalMesg.reset('#modal_mesg');
-            cb();
-            isPrinting = false;
-            remoteBuzzerClient.inProgress(false);
-        }, to);
-    };
-
-    api.printImage = function (imageSrc, cb) {
-        if (api.isVideoFile(imageSrc)) {
-            photoboothTools.console.log('ERROR: An error occurred: attempt to print non printable file.');
-            photoboothTools.modalMesg.showError('#modal_mesg', photoboothTools.getTranslation('no_printing'));
-            setTimeout(function () {
-                photoboothTools.modalMesg.reset('#modal_mesg');
-            }, notificationTimeout);
-        } else if (isPrinting) {
-            photoboothTools.console.log('Printing in progress: ' + isPrinting);
-        } else {
-            photoboothTools.modal.open('#print_mesg');
-            isPrinting = true;
-
-            remoteBuzzerClient.inProgress('print');
-
-            $.ajax({
-                method: 'GET',
-                url: 'api/print.php',
-                data: {
-                    filename: imageSrc
-                },
-                success: (data) => {
-                    photoboothTools.console.log('Picture processed: ', data);
-
-                    if (data.status == 'locking') {
-                        photoboothTools.modal.close('#print_mesg');
-                        photoboothTools.modalMesg.showWarn(
-                            '#modal_mesg',
-                            config.print.locking_msg +
-                                ' (' +
-                                photoboothTools.getTranslation('printed') +
-                                ' ' +
-                                data.count +
-                                ')'
-                        );
-                        api.resetPrintErrorMessage(cb, config.print.time);
-                    } else if (data.error) {
-                        photoboothTools.console.log('ERROR: An error occurred: ', data.error);
-                        photoboothTools.modal.close('#print_mesg');
-                        photoboothTools.modalMesg.showError('#modal_mesg', data.error);
-                        api.resetPrintErrorMessage(cb, config.print.time);
-                    } else {
-                        setTimeout(function () {
-                            photoboothTools.modal.close('#print_mesg');
-                            cb();
-                            isPrinting = false;
-                            remoteBuzzerClient.inProgress(false);
-                        }, config.print.time);
-                    }
-                },
-                error: (jqXHR, textStatus) => {
-                    photoboothTools.console.log('ERROR: An error occurred: ', textStatus);
-                    photoboothTools.modal.close('#print_mesg');
-                    photoboothTools.modalMesg.showError('#modal_mesg', photoboothTools.getTranslation('error'));
-                    api.resetPrintErrorMessage(cb, notificationTimeout);
-                }
-            });
-        }
     };
 
     api.deleteImage = function (imageName, cb) {
@@ -1371,7 +1293,16 @@ const photoBooth = (function () {
     };
 
     $(document).on('keyup', function (ev) {
-        if (typeof onStandaloneGalleryView === 'undefined' && typeof onLiveChromaKeyingView === 'undefined') {
+        if (api.isTimeOutPending()) {
+            if (typeof onStandaloneGalleryView !== 'undefined' || startPage.is(':visible')) {
+                clearTimeout(timeOut);
+                photoboothTools.console.logDev('Timeout for auto reload cleared.');
+            } else {
+                api.resetTimeOut();
+            }
+        }
+
+        if (typeof onStandaloneGalleryView === 'undefined' && typeof onCaptureChromaView === 'undefined') {
             if (
                 (config.picture.key && parseInt(config.picture.key, 10) === ev.keyCode) ||
                 (config.collage.key && parseInt(config.collage.key, 10) === ev.keyCode) ||
@@ -1384,7 +1315,7 @@ const photoBooth = (function () {
                 }
                 api.closeGallery();
             } else if (config.print.from_result && config.print.key && parseInt(config.print.key, 10) === ev.keyCode) {
-                if (isPrinting) {
+                if (photoboothTools.isPrinting) {
                     photoboothTools.console.log('Printing already in progress!');
                 } else {
                     printBtn.trigger('click');

@@ -141,12 +141,10 @@ To use a private custom index you need to create the following files:
 
 - `resources/css/custom_style.css`
   - Optional: `src/sass/custom_style.scss` (`yarn build` will create the `resources/css/custom_style.css` out of it)
-- `resources/css/custom_admin.css`
-  - Optional: `src/sass/custom_admin.scss` (`yarn build` will create the `resources/css/custom_admin.css` out of it)
 - `resources/css/custom_chromakeying.css`
   - Optional: `src/sass/custom_chromakeying.scss` (`yarn build` will create the `resources/css/custom_chromakeying.css` out of it)
-- `resources/css/custom_live_chromakeying.css`
-  - Optional: `src/sass/custom_live_chromakeying.scss` (`yarn build` will create the `resources/css/custom_live_chromakeying.css` out of it)
+- `resources/css/custom_chromacapture.css`
+  - Optional: `src/sass/custom_chromacapture.scss` (`yarn build` will create the `resources/css/custom_chromacapture.css` out of it)
 - `template/custom.template.php`
 
 At least one of these custom style files need to exist! If other custom style files are missing a copy of the modern style file will be used.
@@ -253,7 +251,7 @@ Having trouble?
 - Set Photobooth loglevel to 1 (or above). (admin screen -> general section)
 - Reload the Photobooth homepage
 - Check the browser developer console for error logs
-- Check the server logs for errors at the Debug panel: [http://localhost/admin/debugpanel.php](http://localhost/admin/debugpanel.php)
+- Check the server logs for errors at the Debug panel: [http://localhost/admin/debugpanel](http://localhost/admin/debugpanel)
 - If there is no errors logged but hardware buttons still do not trigger:
   - GPIO interrupts might be disabled. Check file `/boot/config.txt` and remove / disable the following overlay `dtoverlay=gpio-no-irq` to enable interrupts for GPIOs.
   - Button GPIOs may not be configured as PULLUP. The configuration for this is done in fie `/boot/config.txt` by adding the GPIO numbers in use as follows - you **must reboot** the Raspberry Pi in order to activate changes in this setting.
@@ -738,7 +736,7 @@ Tested working setup:
 
 ### How to only open the gallery to avoid people taking pictures?
 
-Open [http://localhost/gallery.php](http://localhost/gallery.php) in your browser (you can replace `localhost` with your IP adress).
+Open [http://localhost/gallery](http://localhost/gallery) in your browser (you can replace `localhost` with your IP adress).
 
 ---
 
@@ -811,7 +809,7 @@ Use the `install-photobooth.sh` script to get the operating system setup in plac
 **Note:** If you have declined the question to enable the USB sync file backup while running the `install-photobooth.sh` you need to run the following commands to get the operating system setup done:
 
 ```sh
-wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/enable-usb-sync.sh
+wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/scripts/enable-usb-sync.sh
 sudo bash enable-usb-sync.sh -username='<YourUsername>'
 ```
 
@@ -821,7 +819,7 @@ A USB drive / stick can be identified either by the USB stick label (e.g. `photo
 
 Pictures will be synced to the USB stick matched by the pattern, as long as it is mounted (aka USB stick is plugged in)
 
-Debugging: Check the server logs for errors at the Debug panel: [http://localhost/admin/debugpanel.php](http://localhost/admin/debugpanel.php)
+Debugging: Check the server logs for errors at the Debug panel: [http://localhost/admin/debugpanel](http://localhost/admin/debugpanel)
 
 ---
 
@@ -924,7 +922,7 @@ There's different reasons if you get the error "Something went wrong. Please try
 
 First of all, please set the **Loglevel** to **2** via admin panel (GENERAL section, [http://localhost/admin](http://localhost/admin)) and try again. You'll still see the error message, but we make sure to log enough information to see what's wrong.
 
-Now open the Debug panel ([http://localhost/admin/debugpanel.php](http://localhost/admin/debugpanel.php)) and check the Photobooth log for error messages. You should see something like this:
+Now open the Debug panel ([http://localhost/admin/debugpanel](http://localhost/admin/debugpanel)) and check the Photobooth log for error messages. You should see something like this:
 
 ```
 2023-01-03T08:34:37+01:00:

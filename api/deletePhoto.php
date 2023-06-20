@@ -1,55 +1,54 @@
 <?php
+
 header('Content-Type: application/json');
 
 require_once '../lib/db.php';
 require_once '../lib/config.php';
 require_once '../lib/log.php';
+require_once '../lib/deleteFile.php';
 
-if (empty($_POST['file'])) {
-    $errormsg = basename($_SERVER['PHP_SELF']) . ': No file provided';
-    logErrorAndDie($errormsg);
+$Logger = new DataLogger(PHOTOBOOTH_LOG);
+$Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
+
+try {
+    if (empty($_POST['file'])) {
+        throw new Exception('No file provided');
+    }
+} catch (Exception $e) {
+    // Handle the exception
+    $ErrorData = [
+        'error' => $e->getMessage(),
+    ];
+
+    $Logger->logToFile($ErrorData);
+
+    $ErrorString = json_encode($ErrorData);
+    die($ErrorString);
 }
 
-$images = [];
-$unavailableImages = [];
-$failedImages = [];
 $file = $_POST['file'];
-$success = true;
-$images = [
-    $config['foldersAbs']['images'] . DIRECTORY_SEPARATOR . $file,
-    $config['foldersAbs']['thumbs'] . DIRECTORY_SEPARATOR . $file,
-    $config['foldersAbs']['keying'] . DIRECTORY_SEPARATOR . $file,
-];
+$paths = [$config['foldersAbs']['images'], $config['foldersAbs']['thumbs'], $config['foldersAbs']['keying']];
 
 if (!$config['picture']['keep_original']) {
-    $images[] = $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . $file;
+    $paths[] = $config['foldersAbs']['tmp'];
 }
 
-foreach ($images as $image) {
-    if (is_readable($image)) {
-        if (!unlink($image)) {
-            $errormsg = basename($_SERVER['PHP_SELF']) . ': Could not delete ' . $image;
-            logError($errormsg);
-            $success = false;
-            $failedImages[] = $image;
-        }
-    } else {
-        $unavailableImages[] = $image;
-    }
-}
+$delete = new FileDelete($file, $paths);
+$delete->deleteFiles();
+$logData = $delete->getLogData();
 
 if ($config['database']['enabled']) {
-    deleteImageFromDB($file);
+    $database = new DatabaseManager();
+    $database->db_file = DB_FILE;
+    $database->file_dir = IMG_DIR;
+    $database->deleteContentFromDB($file);
 }
 
-$LogData = [
-    'success' => $success,
-    'file' => $file,
-    'unavailable' => $unavailableImages,
-    'failed' => $failedImages,
-];
-$LogString = json_encode($LogData);
-if (!$success || $config['dev']['loglevel'] > 1) {
-    logError($LogData);
+if (!$logData['success'] || $config['dev']['loglevel'] > 1) {
+    $Logger->addLogData($logData);
+    $Logger->logToFile();
 }
-echo $LogString;
+
+$logString = json_encode($logData);
+echo $logString;
+exit();

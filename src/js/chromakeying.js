@@ -1,14 +1,17 @@
-/* globals MarvinColorModelConverter AlphaBoundary MarvinImage Seriously initRemoteBuzzerFromDOM rotaryController photoboothTools */
-/* exported setBackgroundImage */
+/* globals photoBooth MarvinColorModelConverter AlphaBoundary MarvinImage Seriously initRemoteBuzzerFromDOM rotaryController photoboothTools */
+/* exported setBackgroundImage setMainImage */
 let mainImage;
 let mainImageWidth;
 let mainImageHeight;
 let backgroundImage;
-let isPrinting = false;
 let seriously;
 let target;
 let chroma;
 let seriouslyimage;
+let needsReload = false;
+const notificationTimeout = config.ui.notification_timeout * 1000;
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext ? canvas.getContext('2d') : null;
 
 function greenToTransparency(imageIn, imageOut) {
     for (let y = 0; y < imageIn.getHeight(); y++) {
@@ -54,7 +57,7 @@ function alphaBoundary(imageOut, radius) {
     }
 }
 
-function setMainImage(imgSrc) {
+function setMainImage(imgSrc, save = false, filename = '') {
     if (config.keying.variant === 'marvinj') {
         const image = new MarvinImage();
         image.load(imgSrc, function () {
@@ -80,7 +83,7 @@ function setMainImage(imgSrc) {
             mainImage = new Image();
             mainImage.src = tmpCanvas.toDataURL('image/png');
             mainImage.onload = function () {
-                drawCanvas();
+                drawCanvas(save, filename);
             };
         });
     } else {
@@ -119,7 +122,7 @@ function setMainImage(imgSrc) {
             mainImage.src = tmpCanvas.toDataURL('image/png');
 
             mainImage.onload = function () {
-                drawCanvas();
+                drawCanvas(save, filename);
             };
         };
         image.src = imgSrc;
@@ -132,11 +135,11 @@ function setBackgroundImage(url) {
     backgroundImage.src = url;
     backgroundImage.onload = function () {
         drawCanvas();
+        $('.canvasWrapper').css('display', 'inline-block');
     };
 }
 
-function drawCanvas() {
-    const canvas = document.getElementById('mainCanvas');
+function drawCanvas(save = false, filename = '') {
     if (typeof mainImage !== 'undefined' && mainImage !== null) {
         canvas.width = mainImage.width;
         canvas.height = mainImage.height;
@@ -145,7 +148,7 @@ function drawCanvas() {
         canvas.height = backgroundImage.height;
     }
 
-    const ctx = canvas.getContext ? canvas.getContext('2d') : null;
+    // Clear the canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     if (typeof backgroundImage !== 'undefined' && backgroundImage !== null) {
@@ -169,7 +172,100 @@ function drawCanvas() {
             //important to fetch tmpimageout
             ctx.drawImage(document.getElementById('tmpimageout'), 0, 0);
         }
+        if (save) {
+            saveImage(filename);
+        }
     }
+}
+
+function clearCanvasAndLoadImage(imageUrl) {
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Create a new image element
+    const newImage = new Image();
+
+    // Set the onload event handler to execute code after the image is loaded
+    newImage.onload = function () {
+        canvas.width = newImage.width;
+        canvas.height = newImage.height;
+        ctx.drawImage(newImage, 0, 0);
+    };
+
+    // Set the source of the image to the specified URL
+    newImage.src = imageUrl;
+}
+
+function saveImage(filename, cb) {
+    const dataURL = canvas.toDataURL('image/png');
+    $.ajax({
+        method: 'POST',
+        url: config.foldersJS.api + '/chromakeying/save.php',
+        data: {
+            imgData: dataURL,
+            file: filename
+        },
+        success: (resp) => {
+            if (typeof onCaptureChromaView === 'undefined') {
+                setTimeout(function () {
+                    photoboothTools.modal.close('#save_mesg');
+                    $('#save-chroma-btn').blur();
+                }, notificationTimeout);
+            } else {
+                photoBooth.takingPic = false;
+                needsReload = true;
+                photoBooth.chromaimage = resp.filename;
+                if ($('.chroma-control-bar').is(':hidden')) {
+                    $('.chroma-control-bar').show();
+                    $('.takeChroma').hide();
+                }
+                clearCanvasAndLoadImage(config.foldersJS.images + '/' + resp.filename);
+
+                if (config.picture.allow_delete) {
+                    $('.deletebtn').css('visibility', 'visible');
+                    $('.chroma-control-bar')
+                        .find('.deletebtn')
+                        .off('click')
+                        .on('click', (ev) => {
+                            ev.preventDefault();
+
+                            const msg = photoboothTools.getTranslation('really_delete_image');
+                            const really = config.delete.no_request ? true : confirm(resp.filename + ' ' + msg);
+                            if (really) {
+                                photoBooth.deleteImage(resp.filename, (result) => {
+                                    if (result.success && config.keying.show_all) {
+                                        photoBooth.deleteImage(photoBooth.filename, () => {
+                                            setTimeout(function () {
+                                                photoboothTools.reloadPage();
+                                            }, notificationTimeout);
+                                        });
+                                    } else {
+                                        setTimeout(function () {
+                                            photoboothTools.reloadPage();
+                                        }, notificationTimeout);
+                                    }
+                                });
+                            } else {
+                                $('.deletebtn').blur();
+                            }
+                        });
+                }
+                if (resp.filename) {
+                    // Add Image to gallery and slider
+                    photoBooth.addImage(resp.filename);
+                }
+            }
+            if (cb) {
+                cb(resp);
+            }
+        },
+        error: (jqXHR, textStatus) => {
+            photoboothTools.console.log(textStatus);
+            setTimeout(function () {
+                photoboothTools.reloadPage();
+            }, notificationTimeout);
+        }
+    });
 }
 
 function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
@@ -181,83 +277,16 @@ function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
     };
 }
 
-function printImage(filename, cb) {
-    const errormsg = photoboothTools.getTranslation('error');
-
-    if (isPrinting) {
-        photoboothTools.console.log('Printing already: ' + isPrinting);
-    } else {
-        isPrinting = true;
-        setTimeout(function () {
-            $.ajax({
-                method: 'GET',
-                url: 'api/print.php',
-                data: {
-                    filename: filename
-                },
-                success: (data) => {
-                    photoboothTools.console.log('Picture processed: ', data);
-
-                    if (data.error) {
-                        photoboothTools.console.log('An error occurred: ', data.error);
-                        photoboothTools.modal.close('#print_mesg');
-                        photoboothTools.modalMesg.showError('#modal_mesg', data.error);
-                    }
-
-                    setTimeout(function () {
-                        if (data.error) {
-                            photoboothTools.modalMesg.reset('#modal_mesg');
-                        } else {
-                            photoboothTools.modal.close('#print_mesg');
-                        }
-                        cb();
-                        isPrinting = false;
-                    }, config.print.time);
-                },
-                error: (jqXHR, textStatus) => {
-                    photoboothTools.console.log('An error occurred: ', textStatus);
-                    photoboothTools.modal.close('#print_mesg');
-                    photoboothTools.modalMesg.showError('#modal_mesg', errormsg);
-
-                    setTimeout(function () {
-                        photoboothTools.modalMesg.reset('#modal_mesg');
-                        cb();
-                        isPrinting = false;
-                    }, 5000);
-                }
-            });
-        }, 1000);
-    }
-}
-
-function saveImage(cb) {
-    const canvas = document.getElementById('mainCanvas');
-    const dataURL = canvas.toDataURL('image/png');
-
-    $.post(
-        'api/chromakeying/save.php',
-        {
-            imgData: dataURL
-        },
-        function (data) {
-            if (cb) {
-                cb(data);
-            }
-        }
-    );
-}
-
 function printImageHandler(ev) {
     ev.preventDefault();
-    photoboothTools.modal.open('#print_mesg');
 
     setTimeout(function () {
-        saveImage((data) => {
-            if (!data.success) {
+        saveImage('', (resp) => {
+            if (!resp.success) {
                 return;
             }
 
-            printImage(data.filename, () => {
+            photoboothTools.printImage(resp.filename, () => {
                 $('#print-btn').blur();
             });
         });
@@ -269,14 +298,7 @@ function saveImageHandler(ev) {
 
     photoboothTools.modal.open('#save_mesg');
 
-    setTimeout(function () {
-        saveImage(() => {
-            setTimeout(function () {
-                photoboothTools.modal.close('#save_mesg');
-                $('#save-chroma-btn').blur();
-            }, 2000);
-        });
-    }, 1000);
+    saveImage();
 }
 
 function closeHandler(ev) {
@@ -290,36 +312,136 @@ function closeHandler(ev) {
 }
 
 $(document).on('keyup', function (ev) {
-    if (config.print.from_chromakeying && config.print.key && parseInt(config.print.key, 10) === ev.keyCode) {
-        if (isPrinting) {
+    if (
+        typeof onCaptureChromaView === 'undefined' &&
+        config.print.from_chromakeying &&
+        config.print.key &&
+        parseInt(config.print.key, 10) === ev.keyCode
+    ) {
+        if (photoboothTools.isPrinting) {
             photoboothTools.console.log('Printing already in progress!');
         } else {
             $('#print-btn').trigger('click');
+        }
+    } else if (
+        typeof onCaptureChromaView != 'undefined' &&
+        ((config.picture.key && parseInt(config.picture.key, 10) === ev.keyCode) ||
+            (config.collage.key && parseInt(config.collage.key, 10) === ev.keyCode))
+    ) {
+        if (!backgroundImage) {
+            photoboothTools.modalMesg.showError(
+                '#modal_mesg',
+                photoboothTools.getTranslation('chroma_needs_background')
+            );
+            setTimeout(function () {
+                photoboothTools.modalMesg.reset('#modal_mesg');
+            }, 1000);
+            photoboothTools.console.logDev('Please choose a background first!');
+        } else if (needsReload) {
+            photoboothTools.modalMesg.showError('#modal_mesg', photoboothTools.getTranslation('chroma_needs_reload'));
+            setTimeout(function () {
+                photoboothTools.modalMesg.reset('#modal_mesg');
+            }, 1000);
+            photoboothTools.console.logDev('Please reload the page to take a new Picture!');
+        } else if (!photoBooth.takingPic) {
+            if (config.collage.key && parseInt(config.collage.key, 10) === ev.keyCode) {
+                photoboothTools.console.logDev(
+                    'Collage key pressed. Not possible on live chroma, triggering photo now.'
+                );
+            }
+            photoBooth.thrill('chroma');
+        } else if (config.dev.loglevel > 0 && photoBooth.takingPic) {
+            photoboothTools.console.log('Taking photo already in progress!');
         }
     }
 });
 
 $(document).ready(function () {
-    $('#save-chroma-btn').on('click', saveImageHandler);
-    $('#print-btn').on('click', printImageHandler);
-    $('#close-btn').on('click', closeHandler);
+    if (typeof onCaptureChromaView === 'undefined') {
+        $('#save-chroma-btn').on('click', saveImageHandler);
+        $('#print-btn').on('click', printImageHandler);
+        $('#close-btn').on('click', closeHandler);
 
-    setTimeout(function () {
-        setMainImage($('body').attr('data-main-image'));
-    }, 100);
+        setTimeout(function () {
+            setMainImage($('body').attr('data-main-image'));
+        }, 100);
 
-    // we don't want to scroll on small or horizontal devices
-    const windowHeight = $(window).innerHeight();
-    const bottomLine = $('.chroma-control-bar').position().top + $('.chroma-control-bar').outerHeight(true);
-    const diff = bottomLine - windowHeight;
+        // we don't want to scroll on small or horizontal devices
+        const windowHeight = $(window).innerHeight();
+        const bottomLine = $('.chroma-control-bar').position().top + $('.chroma-control-bar').outerHeight(true);
+        const diff = bottomLine - windowHeight;
 
-    if (diff > 0) {
-        const canvasHeight = $('#mainCanvas').height();
+        if (diff > 0) {
+            const canvasHeight = $('#mainCanvas').height();
 
-        $('#mainCanvas').css('height', canvasHeight - diff + 'px');
+            $('#mainCanvas').css('height', canvasHeight - diff + 'px');
+        }
+        $('.canvasWrapper').removeClass('initial');
+
+        initRemoteBuzzerFromDOM();
+        rotaryController.focusSet('.chromawrapper');
+    } else {
+        $('.backgroundPreview').on('click', function () {
+            $('.canvasWrapper').removeClass('initial');
+            if ($('.chroma-control-bar').is(':hidden')) {
+                $('.chroma-control-bar').show();
+                $('.chromaNote').empty();
+                $('.chromaNote').hide();
+            }
+            $('.backgrounds').addClass('shrinked');
+        });
+
+        // Take Chroma Button
+        $('.takeChroma, .newchroma').on('click', function (e) {
+            e.preventDefault();
+
+            if (photoBooth.takingPic) {
+                photoboothTools.console.logDev('Taking picture in progress already!');
+
+                return;
+            }
+
+            const chromaInfo = photoboothTools.getTranslation('chromaInfoAfter');
+
+            photoBooth.thrill('chroma');
+
+            if ($('.chroma-control-bar').is(':visible')) {
+                $('.chroma-control-bar').hide();
+                $('.backgrounds').hide();
+
+                setTimeout(() => {
+                    $('.chromaNote').show();
+                    $('.chromaNote').text(chromaInfo);
+                    $('.chroma-control-bar > .takeChroma').hide();
+                    $('.chroma-control-bar > .deleteBtn').hide();
+                    $('.chroma-control-bar > .reloadPage').show();
+                    $('.chroma-control-bar').show();
+                }, config.picture.cntdwn_time * 1000);
+            }
+        });
+
+        $('.reloadPage').on('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            photoboothTools.reloadPage();
+        });
+
+        // Open Gallery Button
+        $('.chromaCapture-gallery-btn').on('click', function (e) {
+            e.preventDefault();
+
+            photoBooth.openGallery($(this));
+        });
+
+        // Close Button
+        $('.chromaCapture-close-btn').on('click', function () {
+            location.assign('./index.php');
+        });
+
+        photoboothTools.console.log('[CHROMA CAPTURE] DOM ready');
+        if (typeof rotaryController !== 'undefined') {
+            rotaryController.focusSet('#start');
+        }
     }
-    $('.canvasWrapper').removeClass('initial');
-
-    initRemoteBuzzerFromDOM();
-    rotaryController.focusSet('.chromawrapper');
 });

@@ -1,7 +1,8 @@
 <?php
 session_start();
+$fileRoot = '../';
 
-require_once('../lib/config.php');
+require_once($fileRoot . 'lib/config.php');
 
 // LOGIN
 $username = $config['login']['username'];
@@ -19,95 +20,81 @@ if (isset($_POST['submit'])) {
 }
 // END LOGIN
 
-$btnClass = 'btn btn--login shape--' . $config['ui']['button'];
-$uiShape = 'shape--' . $config['ui']['style'];
+$pageTitle = 'Login';
+include($fileRoot . 'admin/components/head.admin.php');
+include($fileRoot . 'admin/helper/index.php');
+
+$labelClass = 'w-full flex flex-col mb-1';
+$inputClass = 'w-full h-10 border border-solid border-gray-300 focus:border-brand-1 rounded-md px-3 mt-auto';
+$btnClass = 'w-full h-12 rounded-full bg-brand-1 text-white flex items-center justify-center relative ml-auto border-2 border-solid border-brand-1 hover:bg-white hover:text-brand-1 transition font-bold px-4';
 ?>
-<!DOCTYPE html>
-<html>
 
-<head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0 user-scalable=no">
-	<meta name="msapplication-TileColor" content="<?=$config['colors']['primary']?>">
-	<meta name="theme-color" content="<?=$config['colors']['primary']?>">
+<body>
+	<div class="w-full h-screen grid place-items-center absolute bg-brand-1 px-6 py-12 overflow-x-hidden overflow-y-auto">
+		<div class="w-full flex items-center justify-center flex-col">
 
-	<title><?=$config['ui']['branding']?> Login</title>
+		<?php 
+			if($config['login']['enabled'] && !(isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
+				if(isset($config['login']['keypad']) && $config['login']['keypad'] === true) {
+					include('keypad.php');
+				} else {
+					include('loginMask.php');
+				}
+			}	
+		?>
 
-	<!-- Favicon + Android/iPhone Icons -->
-	<link rel="apple-touch-icon" sizes="180x180" href="../resources/img/apple-touch-icon.png">
-	<link rel="icon" type="image/png" sizes="32x32" href="../resources/img/favicon-32x32.png">
-	<link rel="icon" type="image/png" sizes="16x16" href="../resources/img/favicon-16x16.png">
-	<link rel="manifest" href="../resources/img/site.webmanifest">
-	<link rel="mask-icon" href="../resources/img/safari-pinned-tab.svg" color="#5bbad5">
+		<div class="w-full max-w-xl rounded-lg py-8 bg-white flex flex-col shadow-xl relative">
 
-	<!-- Fullscreen Mode on old iOS-Devices when starting photobooth from homescreen -->
-	<meta name="apple-mobile-web-app-capable" content="yes" />
-	<meta name="apple-mobile-web-app-status-bar-style" content="black" />
+			<div class="px-4">
+				<h1 class="text-2xl font-bold text-center mb-6 border-solid border-b border-gray-200 pb-4 text-brand-1">
+					<span data-i18n="menu"></span>
+				</h1>
+			</div>
 
-	<link rel="stylesheet" href="../node_modules/normalize.css/normalize.css" />
-	<link rel="stylesheet" href="../node_modules/font-awesome/css/font-awesome.css" />
-	<link rel="stylesheet" href="../node_modules/material-icons/iconfont/material-icons.css">
-	<link rel="stylesheet" href="../node_modules/material-icons/css/material-icons.css">
-	<link rel="stylesheet" href="../resources/css/login.css?v=<?php echo $config['photobooth']['version']; ?>" />
-	<?php if (is_file("../private/overrides.css")): ?>
-	<link rel="stylesheet" href="../private/overrides.css?v=<?php echo $config['photobooth']['version']; ?>" />
-	<?php endif; ?>
-</head>
+			<?php if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && (isset($_SERVER['SERVER_ADDR']) && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR'])) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
+			<div class="w-12 h-12 bg-white absolute right-4 top-4 rounded-b-l-lg shadow-xls flex items-center justify-center text-brand-1 cursor-pointer">
+				<a href="<?=$fileRoot?>" >
+					<i class="!text-2xl <?php echo $config['icons']['close']; ?>"></i>
+					<!-- <span data-i18n="close"></span> -->
+				</a>
+			</div>
+			<?php endif; ?>
 
-<body class="loginbody">
-	<div class="login-panel <?php echo $uiShape; ?>">
-		<h2><?=$config['ui']['branding']?> Login</h2>
-		<hr>
-		<?php if($config['login']['enabled'] && !(isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
-		<form method='post' class="login">
-			<label for="username"><span data-i18n="login_username"></span></label>
-			<input type="text" name="username" id="username" autocomplete="on" required>
-			<label for="password"><span data-i18n="login_password"></span></label>
-			</br>
-			<input type="password" name="password" id="password" autocomplete="on" required>
-			<span toggle="#password" class="password-toggle <?php echo $config['icons']['password_visibility']; ?>"></span>
-			<p><input type="submit" name="submit" value="Login" class="btn btn--tiny btn--flex <?php echo $uiShape; ?>"></p>
-			<?php if ($error !== false) {
-				echo '<p style="color: red;"><span data-i18n="login_invalid"></span></p>';
-			} ?>
-		</form>
-		<hr>
-		<?php endif; ?>
-		<?php if(!$config['protect']['admin'] || (!$config['protect']['localhost_admin'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
-		<p><a href="../admin" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['admin']; ?>"></i> <span data-i18n="admin_panel"></span></a></p>
-		<?php endif; ?>
-		<p><a href="../gallery.php" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['gallery']; ?>"></i> <span data-i18n="gallery"></span></a></p>
-		<p><a href="../slideshow" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['slideshow']; ?>"></i> <span data-i18n="slideshow"></span></a></p>
-		<?php if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
-		<p><a href="../livechroma.php" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['livechroma']; ?>"></i> <span data-i18n="livechroma"></span></a></p>
-		<?php endif; ?>
-		<?php if(!$config['protect']['manual'] || (!$config['protect']['localhost_manual'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
-		<p><a href="../faq" class="<?php echo $btnClass; ?>" title="FAQ" target="newwin"><i class="<?php echo $config['icons']['faq']; ?>"></i> <span data-i18n="show_faq"></span></a></p>
-		<p><a href="../manual" class="<?php echo $btnClass; ?>" title="Manual" target="newwin"><i class="<?php echo $config['icons']['manual']; ?>"></i> <span data-i18n="show_manual"></span></a></p>
-		<p><a href="https://t.me/PhotoboothGroup" class="<?php echo $btnClass; ?>" title="Telegram" target="newwin"><i class="<?php echo $config['icons']['telegram']; ?>"></i> <span data-i18n="telegram"></span></a></p>
-		<?php endif; ?>
-		<p><a href="./" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['refresh']; ?>"></i> <span data-i18n="reload"></span></a></p>
-		<?php if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR']) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)): ?>
-		<p><a href="../" class="<?php echo $btnClass; ?>" ><i class="<?php echo $config['icons']['close']; ?>"></i> <span data-i18n="close"></span></a></p>
-		<?php endif; ?>
-		<?php if(isset($_SESSION['auth']) && $_SESSION['auth'] === true): ?>
-		<p><a href="logout.php" class="<?php echo $btnClass; ?>"><i class="<?php echo $config['icons']['logout']; ?>"></i> <span data-i18n="logout"></span></a></p>
-		<?php endif; ?>
-	</div>
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 ">
+				<?php 
+					if(!$config['protect']['admin'] || (!$config['protect']['localhost_admin'] && (isset($_SERVER['SERVER_ADDR']) && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR'])) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
+						echo getMenuBtn('/admin', 'admin_panel', $config['icons']['admin']);
+					}
 
-	<div id="adminsettings">
-		<div style="position:absolute; bottom:0; right:0;">
-			<img src="../resources/img/spacer.png" alt="adminsettings" ondblclick="adminsettings()" />
+					echo getMenuBtn($fileRoot . 'gallery', 'gallery', $config['icons']['gallery']);
+					echo getMenuBtn($fileRoot . 'slideshow', 'slideshow', $config['icons']['slideshow']);
+
+					if(!$config['protect']['index'] || (!$config['protect']['localhost_index'] && (isset($_SERVER['SERVER_ADDR']) && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR'])) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
+						echo getMenuBtn($fileRoot . 'chroma', 'chromaCapture', $config['icons']['chromaCapture']);
+					}
+
+					if(!$config['protect']['manual'] || (!$config['protect']['localhost_manual'] && (isset($_SERVER['SERVER_ADDR']) && $_SERVER['REMOTE_ADDR'] === $_SERVER['SERVER_ADDR'])) || !$config['login']['enabled'] || (isset($_SESSION['auth']) && $_SESSION['auth'] === true)) {
+						echo getMenuBtn($fileRoot . 'faq', 'show_faq', $config['icons']['faq']);
+						echo getMenuBtn($fileRoot . 'manual', 'show_manual', $config['icons']['manual']);
+						echo getMenuBtn('https://t.me/PhotoboothGroup', 'telegram', $config['icons']['telegram']);
+					}
+
+					// echo getMenuBtn("/", "reload", $config['icons']['refresh']);
+
+					if(isset($_SESSION['auth']) && $_SESSION['auth'] === true) {
+						echo getMenuBtn($fileRoot . 'login/logout.php', 'logout', $config['icons']['logout']);
+					}
+
+				?>
+			</div>
+
+		</div>
+		
 		</div>
 	</div>
 
-	<script src="../node_modules/whatwg-fetch/dist/fetch.umd.js"></script>
-	<script type="text/javascript" src="../api/config.php?v=<?php echo $config['photobooth']['version']; ?>"></script>
-	<script type="text/javascript" src="../node_modules/jquery/dist/jquery.min.js"></script>
-	<script type="text/javascript" src="../resources/js/adminshortcut.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
-	<script type="text/javascript" src="../resources/js/login.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
-	<script type="text/javascript" src="../resources/js/theme.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
-	<script src="../node_modules/@andreasremdt/simple-translator/dist/umd/translator.min.js"></script>
-	<script type="text/javascript" src="../resources/js/i18n.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
-</body>
-</html>
+
+
+<?php
+    include($fileRoot . 'admin/components/footer.admin.php');
+?>

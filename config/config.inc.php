@@ -216,12 +216,12 @@ $config['preview']['showFrame'] = false;
 $config['keying']['enabled'] = false;
 // possible size values: '1000px', '1500px', '2000px', '2500px'
 $config['keying']['size'] = '1500px';
-$config['live_keying']['enabled'] = false;
+$config['chromaCapture']['enabled'] = false;
 // possible variant values: 'marvinj', 'seriouslyjs'
 $config['keying']['variant'] = 'seriouslyjs';
 $config['keying']['seriouslyjs_color'] = '#62af74';
 $config['keying']['background_path'] = 'resources/img/background';
-$config['live_keying']['show_all'] = false;
+$config['keying']['show_all'] = false;
 
 
 // P R I N T
@@ -268,6 +268,7 @@ $config['qr']['url'] = '';
 $config['qr']['append_filename'] = true;
 $config['qr']['custom_text'] = false;
 $config['qr']['text'] = '';
+$config['qr']['result'] = 'hidden';
 
 
 // E -  M A I L
@@ -367,6 +368,8 @@ $config['get_request']['video'] = 'CNTDWNVIDEO';
 $config['login']['enabled'] = false;
 $config['login']['username'] = 'Photo';
 $config['login']['password'] = '';
+$config['login']['keypad'] = false;
+$config['login']['pin'] = '';
 $config['protect']['admin'] = true;
 $config['protect']['localhost_admin'] = true;
 $config['protect']['index'] = false;
@@ -392,7 +395,6 @@ $config['colors']['countdown'] = '#ffffff';
 $config['colors']['background_countdown'] = '#2e2e2e';
 $config['colors']['cheese'] = '#ffffff';
 $config['background']['defaults'] = '';
-$config['background']['admin'] = '';
 $config['background']['chroma'] = '';
 $config['ui']['decore_lines'] = true;
 $config['ui']['rounded_corners'] = false;
@@ -402,7 +404,7 @@ $config['colors']['highlight'] = '#C0C0C0';
 $config['colors']['font'] = '#c9c9c9';
 $config['colors']['button_font'] = '#ffffff';
 $config['colors']['start_font'] = '#ffffff';
-$config['colors']['panel'] = '#212121';
+$config['colors']['panel'] = '#1B3FAA';
 $config['colors']['hover_panel'] = '#2e2e2e';
 $config['colors']['border'] = '#eeeeee';
 $config['colors']['box'] = '#f8f9fc';
@@ -423,7 +425,7 @@ $config['icons']['gallery'] = 'fa fa-picture-o';
 $config['icons']['dependencies'] = 'fa fa-list-ul';
 $config['icons']['update'] = 'fa fa-tasks';
 $config['icons']['slideshow'] = 'fa fa-play';
-$config['icons']['livechroma'] = 'fa fa-paint-brush';
+$config['icons']['chromaCapture'] = 'fa fa-paint-brush';
 $config['icons']['faq'] = 'fa fa-question-circle';
 $config['icons']['manual'] = 'fa fa-info-circle';
 $config['icons']['telegram'] = 'fa fa-telegram';

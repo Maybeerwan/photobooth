@@ -3,11 +3,13 @@ define('SERVER_OS', DIRECTORY_SEPARATOR == '\\' || strtolower(substr(PHP_OS, 0, 
 
 require_once __DIR__ . '/arrayDeepMerge.php';
 require_once __DIR__ . '/helper.php';
+require_once __DIR__ . '/photobooth.php';
 
+$photobooth = new Photobooth();
 $default_config_file = __DIR__ . '/../config/config.inc.php';
 $my_config_file = __DIR__ . '/../config/my.config.inc.php';
 $basepath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
-$rootpath = Helper::fix_seperator(Helper::get_rootpath($basepath));
+$rootpath = Helper::fixSeperator(Helper::getRootpath($basepath));
 
 $cmds = [
     'windows' => [
@@ -150,7 +152,7 @@ if (empty($config['ui']['folders_lang'])) {
     $config['ui']['folders_lang'] = $rootpath . '/resources/lang';
 }
 
-$config['ui']['folders_lang'] = Helper::set_absolute_path(Helper::fix_seperator($config['ui']['folders_lang']));
+$config['ui']['folders_lang'] = Helper::setAbsolutePath(Helper::fixSeperator($config['ui']['folders_lang']));
 
 foreach ($config['folders'] as $key => $folder) {
     if ($folder === 'data' || $folder === 'archives' || $folder === 'config' || $folder === 'private') {
@@ -159,7 +161,7 @@ foreach ($config['folders'] as $key => $folder) {
         $path = $basepath . $config['folders']['data'] . DIRECTORY_SEPARATOR . $folder;
         $config['foldersRoot'][$key] = $config['folders']['data'] . DIRECTORY_SEPARATOR . $folder;
 
-        $config['foldersJS'][$key] = Helper::fix_seperator(Helper::get_rootpath($path));
+        $config['foldersJS'][$key] = Helper::fixSeperator(Helper::getRootpath($path));
     }
 
     if (!file_exists($path)) {
@@ -174,9 +176,13 @@ foreach ($config['folders'] as $key => $folder) {
     $config['foldersAbs'][$key] = $path;
 }
 
+$config['foldersJS']['api'] = Helper::fixSeperator(Helper::getRootpath($basepath . 'api'));
+$config['foldersJS']['chroma'] = Helper::fixSeperator(Helper::getRootpath($basepath . 'chroma'));
+
 define('PRINT_DB', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'printed.csv');
 define('PRINT_LOCKFILE', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'print.lock');
 define('PRINT_COUNTER', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'print.count');
+define('PHOTOBOOTH_LOG', $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . $config['dev']['logfile']);
 
 if ($config['preview']['mode'] === 'gphoto') {
     $config['preview']['mode'] = 'device_cam';
@@ -190,31 +196,31 @@ if (!empty($config['preview']['killcmd']) && $config['preview']['stop_time'] < $
 $default_font = realpath($basepath . 'resources/fonts/GreatVibes-Regular.ttf');
 $default_frame = realpath($basepath . 'resources/img/frames/frame.png');
 
-if (empty($config['picture']['frame']) || !testFile($config['picture']['frame'])) {
+if (empty($config['picture']['frame'])) {
     $config['picture']['frame'] = $default_frame;
 }
 
-if (empty($config['textonpicture']['font']) || !testFile($config['textonpicture']['font'])) {
+if (empty($config['textonpicture']['font'])) {
     $config['textonpicture']['font'] = $default_font;
 }
 
-if (empty($config['collage']['frame']) || !testFile($config['collage']['frame'])) {
+if (empty($config['collage']['frame'])) {
     $config['collage']['frame'] = $default_frame;
 }
 
-if (empty($config['collage']['placeholderpath']) || !testFile($config['collage']['placeholderpath'])) {
+if (empty($config['collage']['placeholderpath'])) {
     $config['collage']['placeholderpath'] = realpath($basepath . 'resources/img/background/01.jpg');
 }
 
-if (empty($config['textoncollage']['font']) || !testFile($config['textoncollage']['font'])) {
+if (empty($config['textoncollage']['font'])) {
     $config['textoncollage']['font'] = $default_font;
 }
 
-if (empty($config['print']['frame']) || !testFile($config['print']['frame'])) {
+if (empty($config['print']['frame'])) {
     $config['print']['frame'] = $default_frame;
 }
 
-if (empty($config['textonprint']['font']) || !testFile($config['textonprint']['font'])) {
+if (empty($config['textonprint']['font'])) {
     $config['textonprint']['font'] = $default_font;
 }
 
@@ -222,7 +228,7 @@ if (empty($config['collage']['limit'])) {
     $config['collage']['limit'] = 4;
 }
 
-$bg_url = Helper::set_absolute_path($rootpath . '/resources/img/bg_stone.jpg');
+$bg_url = Helper::setAbsolutePath($rootpath . '/resources/img/bg_stone.jpg');
 
 if (empty($config['background']['defaults'])) {
     $config['background']['defaults'] = 'url(' . $bg_url . ')';
@@ -237,26 +243,26 @@ if (empty($config['background']['chroma'])) {
 }
 
 if (!empty($config['picture']['frame'])) {
-    $pf_root = Helper::get_rootpath($config['picture']['frame']);
-    $config['picture']['htmlframe'] = Helper::set_absolute_path(Helper::fix_seperator($pf_root));
+    $pf_root = Helper::getRootpath($config['picture']['frame']);
+    $config['picture']['htmlframe'] = Helper::setAbsolutePath(Helper::fixSeperator($pf_root));
 }
 
 if (!empty($config['collage']['frame'])) {
-    $cf_root = Helper::get_rootpath($config['collage']['frame']);
-    $config['collage']['htmlframe'] = Helper::set_absolute_path(Helper::fix_seperator($cf_root));
+    $cf_root = Helper::getRootpath($config['collage']['frame']);
+    $config['collage']['htmlframe'] = Helper::setAbsolutePath(Helper::fixSeperator($cf_root));
 }
 
 if (empty($config['webserver']['ip'])) {
-    $config['webserver']['ip'] = Photobooth::get_ip();
+    $config['webserver']['ip'] = $photobooth->getIp();
 }
 
 if (empty($config['qr']['url'])) {
-    $config['qr']['url'] = Photobooth::get_url() . '/api/download.php?image=';
+    $config['qr']['url'] = $photobooth->getUrl() . '/api/download.php?image=';
 }
 
 $config['cheese_img'] = $config['ui']['shutter_cheese_img'];
 if (!empty($config['cheese_img'])) {
-    $config['cheese_img'] = Helper::set_absolute_path($rootpath . $config['ui']['shutter_cheese_img']);
+    $config['cheese_img'] = Helper::setAbsolutePath($rootpath . $config['ui']['shutter_cheese_img']);
 }
 
-$config['photobooth']['version'] = Photobooth::get_photobooth_version();
+$config['photobooth']['version'] = $photobooth->version;

@@ -50,6 +50,8 @@ function createArchive(fileName, archive) {
 
     archive.directory('admin');
     archive.directory('api');
+    archive.directory('chroma');
+    archive.directory('gallery');
     archive.directory('lib');
     archive.directory('login');
     archive.directory('manual');
@@ -60,21 +62,16 @@ function createArchive(fileName, archive) {
     archive.directory('vendor');
     archive.file('config/.htaccess');
     archive.file('config/config.inc.php');
-    archive.file('chromakeying.php');
     archive.file('faq/index.php');
     archive.file('faq/faq.md.php');
-    archive.file('gallery.php');
     archive.file('HEAD');
     archive.file('index.php');
     archive.file('LICENSE');
     archive.file('LICENSE_NOTICE');
-    archive.file('livechroma.php');
     archive.file('package.json');
-    archive.file('phpinfo.php');
     archive.file('private/README.md');
     archive.file('README.md');
-    archive.file('trigger.php');
-    archive.file('welcome.php');
+    archive.file('welcome/index.php');
     archive.directory('node_modules/@andreasremdt/simple-translator/');
     archive.directory('node_modules/font-awesome/');
     archive.directory('node_modules/material-icons');
@@ -127,7 +124,6 @@ function createArchive(fileName, archive) {
     archive.directory('node_modules/onoff');
     archive.directory('node_modules/parseqs');
     archive.directory('node_modules/parseuri');
-    archive.directory('node_modules/selectize');
     archive.directory('node_modules/socket.io');
     archive.directory('node_modules/socket.io-adapter');
     archive.directory('node_modules/socket.io-client');
@@ -135,7 +131,6 @@ function createArchive(fileName, archive) {
     archive.directory('node_modules/to-array');
     archive.directory('node_modules/file-uri-to-path');
     archive.directory('node_modules/vary');
-    archive.directory('node_modules/waypoints');
     archive.directory('node_modules/ws');
     archive.directory('node_modules/xmlhttprequest-ssl');
     archive.directory('node_modules/yeast');

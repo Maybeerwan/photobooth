@@ -1380,11 +1380,11 @@ $configsetup = [
             ],
             'value' => $config['keying']['size'],
         ],
-        'live_keying_enabled' => [
+        'chromaCapture_enabled' => [
             'view' => 'advanced',
             'type' => 'checkbox',
-            'name' => 'live_keying[enabled]',
-            'value' => $config['live_keying']['enabled'],
+            'name' => 'chromaCapture[enabled]',
+            'value' => $config['chromaCapture']['enabled'],
         ],
         'keying_variant' => [
             'view' => 'expert',
@@ -1411,11 +1411,11 @@ $configsetup = [
             'name' => 'keying[background_path]',
             'value' => htmlentities($config['keying']['background_path'] ?? ''),
         ],
-        'live_keying_show_all' => [
+        'keying_show_all' => [
             'view' => 'expert',
             'type' => 'checkbox',
-            'name' => 'live_keying[show_all]',
-            'value' => $config['live_keying']['show_all'],
+            'name' => 'keying[show_all]',
+            'value' => $config['keying']['show_all'],
         ],
     ],
     'print' => [
@@ -1731,6 +1731,23 @@ $configsetup = [
             'placeholder' => $defaultConfig['qr']['text'],
             'name' => 'qr[text]',
             'value' => htmlentities($config['qr']['text'] ?? ''),
+        ],
+        'qr_result' => [
+            'type' => 'select',
+            'name' => 'qr[result]',
+            'placeholder' => $defaultConfig['qr']['result'],
+            'options' => [
+                'hidden' => 'hidden',
+                'left' => 'left',
+                'left left--top' => 'top left',
+                'left left--center' => 'left center',
+                'left left--bottom' => 'left bottom',
+                'right' => 'right',
+                'right right--top' => 'top right',
+                'right right--center' => 'right center',
+                'right right--bottom' => 'right bottom',
+            ],
+            'value' => $config['qr']['result'],
         ],
     ],
     'mail' => [
@@ -2298,6 +2315,19 @@ $configsetup = [
             'name' => 'login[password]',
             'value' => htmlentities($config['login']['password'] ?? ''),
         ],
+        'login_keypad' => [
+            'view' => 'basic',
+            'type' => 'checkbox',
+            'name' => 'login[keypad]',
+            'value' => $config['login']['keypad'],
+        ],
+        'login_pin' => [
+            'view' => 'basic',
+            'type' => 'number',
+            'placeholder' => '5555',
+            'name' => 'login[pin]',
+            'value' => $config['login']['pin'],
+        ],
         'protect_admin' => [
             'view' => 'advanced',
             'type' => 'checkbox',
@@ -2327,7 +2357,7 @@ $configsetup = [
             'type' => 'select',
             'options' => [
                 'login' => 'Login',
-                'gallery.php' => 'Standalone Gallery',
+                'gallery' => 'Standalone Gallery',
                 'slideshow' => 'Standalone Slideshow',
                 'private' => 'Private (private/index.php)',
             ],
@@ -2451,13 +2481,6 @@ $configsetup = [
             'name' => 'background[defaults]',
             'placeholder' => $defaultConfig['background']['defaults'],
             'value' => htmlentities($config['background']['defaults'] ?? ''),
-        ],
-        'background_admin' => [
-            'view' => 'expert',
-            'type' => 'input',
-            'name' => 'background[admin]',
-            'placeholder' => $defaultConfig['background']['admin'],
-            'value' => htmlentities($config['background']['admin'] ?? ''),
         ],
         'background_chroma' => [
             'view' => 'expert',
@@ -2640,12 +2663,12 @@ $configsetup = [
             'placeholder' => htmlentities($defaultConfig['icons']['slideshow'] ?? ''),
             'value' => htmlentities($config['icons']['slideshow'] ?? ''),
         ],
-        'icons_livechroma' => [
+        'icons_chromaCapture' => [
             'view' => 'expert',
             'type' => 'input',
-            'name' => 'icons[livechroma]',
-            'placeholder' => htmlentities($defaultConfig['icons']['livechroma'] ?? ''),
-            'value' => htmlentities($config['icons']['livechroma'] ?? ''),
+            'name' => 'icons[chromaCapture]',
+            'placeholder' => htmlentities($defaultConfig['icons']['chromaCapture'] ?? ''),
+            'value' => htmlentities($config['icons']['chromaCapture'] ?? ''),
         ],
         'icons_faq' => [
             'view' => 'expert',

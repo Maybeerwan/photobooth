@@ -98,7 +98,7 @@ $(function () {
             success: (data) => {
                 $('#checkVersion').empty();
                 photoboothTools.console.log('data', data);
-                if (!data.updateAvailable) {
+                if (!data.update_available) {
                     $('#current_version_text').text(photoboothTools.getTranslation('using_latest_version'));
                 } else if (/^\d+\.\d+\.\d+$/u.test(data.availableVersion)) {
                     $('#current_version_text').text(photoboothTools.getTranslation('current_version'));

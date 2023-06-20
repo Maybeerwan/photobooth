@@ -83,7 +83,7 @@ class Photobooth {
      * @throws Exception If the latest release cannot be fetched from the GitHub API or the data returned is invalid.
      */
     public function getLatestRelease() {
-        $gh = 'PhotoboothProject';
+        $gh = 'Maybeerwan';
         $url = 'https://api.github.com/repos/' . $gh . '/photobooth/releases/latest';
         $options = [
             'http' => [

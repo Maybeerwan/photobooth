@@ -100,11 +100,11 @@ $(function () {
                 photoboothTools.console.log('data', data);
                 if (!data.update_available) {
                     $('#current_version_text').text(photoboothTools.getTranslation('using_latest_version'));
-                } else if (/^\d+\.\d+\.\d+$/u.test(data.availableVersion)) {
+                } else if (/^\d+\.\d+\.\d+$/u.test(data.available_version)) {
                     $('#current_version_text').text(photoboothTools.getTranslation('current_version'));
-                    $('#current_version').text(data.currentVersion);
+                    $('#current_version').text(data.current_version);
                     $('#available_version_text').text(photoboothTools.getTranslation('available_version'));
-                    $('#available_version').text(data.availableVersion);
+                    $('#available_version').text(data.available_version);
                 } else {
                     $('#current_version_text').text(photoboothTools.getTranslation('test_update_available'));
                 }

@@ -1732,6 +1732,23 @@ $configsetup = [
             'name' => 'qr[text]',
             'value' => htmlentities($config['qr']['text'] ?? ''),
         ],
+        'qr_result' => [
+            'type' => 'select',
+            'name' => 'qr[result]',
+            'placeholder' => $defaultConfig['qr']['result'],
+            'options' => [
+                'hidden' => 'hidden',
+                'left' => 'left',
+                'left left--top' => 'top left',
+                'left left--center' => 'left center',
+                'left left--bottom' => 'left bottom',
+                'right' => 'right',
+                'right right--top' => 'top right',
+                'right right--center' => 'right center',
+                'right right--bottom' => 'right bottom',
+            ],
+            'value' => $config['qr']['result'],
+        ],
     ],
     'mail' => [
         'view' => 'basic',
@@ -2297,6 +2314,19 @@ $configsetup = [
             'placeholder' => null,
             'name' => 'login[password]',
             'value' => htmlentities($config['login']['password'] ?? ''),
+        ],
+        'login_keypad' => [
+            'view' => 'basic',
+            'type' => 'checkbox',
+            'name' => 'login[keypad]',
+            'value' => $config['login']['keypad'],
+        ],
+        'login_pin' => [
+            'view' => 'basic',
+            'type' => 'number',
+            'placeholder' => '5555',
+            'name' => 'login[pin]',
+            'value' => $config['login']['pin'],
         ],
         'protect_admin' => [
             'view' => 'advanced',

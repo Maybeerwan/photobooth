@@ -19,6 +19,18 @@ from picamera2.outputs import FileOutput
 
 TEMP_VIDEO_FILE_APPENDIX = '.temp.mp4'
 
+## to use this file : 
+# - install V4l2loopback 
+# - create file /etc/modprobe.d/v4l2loopback.conf and add line : options v4l2loopback video_nr=3 exclusive_caps=1 card_label="picam control"
+#    video_nr=3 ==> /dev/video3 (device for loopback)
+# - create file /etc/modules-load.d/v4l2loopback.conf and add line : v4l2loopback
+# - test and reload module : sudo update-initramfs -c -k $(uname -r)
+# - reboot
+# - check with : v4l2-ctl --list-devices
+#         > picam control (platform:v4l2loopback-000):
+#	      >          /dev/video3
+#
+# - see faq for configure photobooth and replace cameracontrol.py by picamcontrol.py
 
 class picamcontrol:
     def __init__(self, args):

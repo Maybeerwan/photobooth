@@ -49,11 +49,11 @@ if (isset($data['type'])) {
                 $newConfig['login']['keypad'] = false;
                 $newConfig['login']['pin'] = '';
             }
-            if (isset($newConfig['login']['password'])) {
+            if (isset($newConfig['login']['password']) && !empty($newConfig['login']['password'])) {
                 // allow login via password, but we might have disabled because the PIN length did not match our requirements
                 $newConfig['login']['enabled'] = true;
 
-                if (newConfig['login']['password'] === $config['login']['password']) {
+                if ($newConfig['login']['password'] != $config['login']['password']) {
                     $hashing = password_hash($newConfig['login']['password'], PASSWORD_DEFAULT);
                     $newConfig['login']['password'] = $hashing;
                 }
@@ -70,10 +70,11 @@ if (isset($data['type'])) {
         $newConfig['login']['pin'] = '';
     }
 
-    if (strlen($newConfig['login']['pin']) != 4) {
-        $newConfig['login']['keypad'] = false;
-        $newConfig['login']['pin'] = '';
-        $Logger->addLogData(['keypad' => 'keypad pin reset']);
+    if (isset($newConfig['filters']['enabled']) && $newConfig['filters']['enabled'] == true) {
+        if (isset($newConfig['picture']['keep_original']) && !$newConfig['picture']['keep_original']) {
+            $newConfig['filters']['enabled'] = false;
+            $Logger->addLogData(['filters' => 'Filters disabled, you must keep original images in tmp folder to use this function.']);
+        }
     }
 
     if ($newConfig['preview']['camTakesPic'] && $newConfig['preview']['mode'] != 'device_cam' && $newConfig['preview']['mode'] != 'gphoto') {
@@ -218,11 +219,24 @@ if (isset($data['type'])) {
     }
 
     if ($newConfig['logo']['enabled']) {
-        if (empty($newConfig['logo']['path']) || !is_array(@getimagesize('..' . DIRECTORY_SEPARATOR . $newConfig['logo']['path']))) {
+        $logoPath = $newConfig['logo']['path'];
+        if (empty($logoPath) || !file_exists('..' . DIRECTORY_SEPARATOR . $logoPath)) {
             $newConfig['logo']['enabled'] = false;
             $Logger->addLogData(['logo' => 'Logo file path does not exist or is empty. Logo disabled.']);
         } else {
-            $newConfig['logo']['path'] = Helper::fixSeperator($newConfig['logo']['path']);
+            $newConfig['logo']['path'] = Helper::fixSeperator($logoPath);
+            $ext = pathinfo($logoPath, PATHINFO_EXTENSION);
+            if ($ext === 'svg') {
+                $Logger->addLogData(['logo' => 'Logo file is SVG, path saved.']);
+            } else {
+                $imageInfo = @getimagesize('..' . DIRECTORY_SEPARATOR . $logoPath);
+                if ($imageInfo === false) {
+                    $newConfig['logo']['enabled'] = false;
+                    $Logger->addLogData(['logo' => 'Logo file is not a supported image type [' . $ext . ']. Logo disabled.']);
+                } else {
+                    $Logger->addLogData(['logo' => 'Logo file is a supported image type [' . $ext . '], path saved.']);
+                }
+            }
         }
     }
 

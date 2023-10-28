@@ -1,14 +1,11 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\Photobooth;
-use Photobooth\DataLogger;
-
 header('Content-Type: application/json');
 
-function getLogData($debugLevel)
-{
+require_once '../lib/config.php';
+require_once '../lib/log.php';
+require_once '../lib/photobooth.php';
+
+function getLogData($debugLevel) {
     $Logger = new DataLogger(PHOTOBOOTH_LOG);
     $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
 
@@ -16,7 +13,7 @@ function getLogData($debugLevel)
         $photobooth = new Photobooth();
         $logData = [
             'updateAvailable' => $photobooth->checkUpdate(),
-            'currentVersion' => $photobooth->getVersion(),
+            'currentVersion' => $photobooth->getPhotoboothVersion(),
             'availableVersion' => $photobooth->getLatestRelease(),
         ];
 

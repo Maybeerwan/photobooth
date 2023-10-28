@@ -1,37 +1,40 @@
 <?php
 
-use Photobooth\Service\LanguageService;
-use Photobooth\Utility\ComponentUtility;
-
-$languageService = LanguageService::getInstance();
-
-echo '<div class="buttonbar">';
 if ($config['button']['force_buzzer']) {
-    echo '<div class="buzzer-message">' . $languageService->translate('use_button') . '</div>';
+    echo '<div id="useBuzzer">';
+    echo '<span data-i18n="use_button"></span>';
+    echo '</div>' . "\n";
 } else {
     if ($config['picture']['enabled']) {
-        echo ComponentUtility::renderButton('takePhoto', $config['icons']['take_picture'], 'takePic');
+        echo '<a href="#" class="' . $btnClass . ' takePic rotaryfocus"><i class="' . $config['icons']['take_picture'] . '"></i> <span data-i18n="takePhoto"></span></a>' . "\n";
     }
     if ($config['custom']['enabled']) {
-        echo ComponentUtility::renderButton($config['custom']['btn_text'], $config['icons']['take_custom'], 'takeCustom');
+        echo '<a href="#" class="' .
+            $btnClass .
+            ' 
+        takeCustom rotaryfocus"><i class="' .
+            $config['icons']['take_custom'] .
+            '"></i> <span>' .
+            $config['custom']['btn_text'] .
+            '</span></a>' .
+            "\n";
     }
     if ($config['collage']['enabled']) {
-        echo ComponentUtility::renderButton('takeCollage', $config['icons']['take_collage'], 'takeCollage');
+        echo '<a href="#" class="' .
+            $btnClass .
+            ' takeCollage rotaryfocus"><i class="' .
+            $config['icons']['take_collage'] .
+            '"></i> <span data-i18n="takeCollage"></span></a>' .
+            "\n";
     }
     if ($config['video']['enabled']) {
-        echo ComponentUtility::renderButton('takeVideo', $config['icons']['take_video'], 'takeVideo');
+        echo '<a href="#" class="' .
+            $btnClass .
+            ' 
+        takeVideo rotaryfocus"><i class="' .
+            $config['icons']['take_video'] .
+            '"></i> <span data-i18n="takeVideo"></span></a>' .
+            "\n";
     }
 }
-if ($config['button']['reload']) {
-    echo ComponentUtility::renderButton('reload', $config['icons']['refresh'], 'reload');
-}
-if ($config['gallery']['enabled']) {
-    echo ComponentUtility::renderButton('gallery', $config['icons']['gallery'], 'gallery-button');
-}
-if ($config['button']['show_fs']) {
-    echo ComponentUtility::renderButton('toggleFullscreen', $config['icons']['fullscreen'], 'fs-button');
-}
-if ($config['button']['show_cups']) {
-    echo ComponentUtility::renderButton('cups', $config['icons']['cups'], 'cups-button');
-}
-echo '</div>';
+?>

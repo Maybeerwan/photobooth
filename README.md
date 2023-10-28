@@ -1,26 +1,24 @@
 
 # Photobooth v4
 
-![](resources/img/logo/banner.png)
-
 A Photobooth web interface for Linux and Windows.
 
-Photobooth was initially developped by Andre Rinas to use on a Raspberry Pi, you can find his source [here](https://github.com/andreknieriem/photobooth).
-In 2019 Andreas Blaesius picked up the work and continued to work on the source.
+Photobooth was initially developped by Andre Rinas to use on a Raspberry Pi, you can find his source [here](https://github.com/andreknieriem/photobooth).  
+In 2019 Andreas Blaesius picked up the work and continued to work on the source.  
 With the help of the community Photobooth grew to a powerfull Photobooth software with a lot of features and possibilities.
 
 _(The full changelog can be found on [https://photoboothproject.github.io](https://photoboothproject.github.io).)_
 
-[![Chat on Telegram](https://img.shields.io/badge/Chat%20on-Telegram-blue.svg)](https://t.me/PhotoboothGroup)
+[![Chat on Telegram](https://img.shields.io/badge/Chat%20on-Telegram-blue.svg)](https://t.me/PhotoboothGroup)  
 
-[![Translate on Crowdin](https://img.shields.io/badge/Traslate%20on-Crowdin-green.svg)](https://crowdin.com/project/photobooth)
+[![Translate on Crowdin](https://img.shields.io/badge/Traslate%20on-Crowdin-green.svg)](https://crowdin.com/project/photobooth)  
 
-_Latest stable release:_
+_Latest stable release:_  
 [![Lint](https://github.com/PhotoboothProject/photobooth/workflows/Lint/badge.svg?branch=stable4)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Astable4+workflow%3ALint)
 [![gulp-sass](https://github.com/PhotoboothProject/photobooth/workflows/gulp-sass/badge.svg?branch=stable4)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Astable4+workflow%3Agulp-sass)
 [![Build](https://github.com/PhotoboothProject/photobooth/workflows/Build/badge.svg?branch=stable4)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Astable4+workflow%3ABuild)
 
-_Latest development version:_
+_Latest development version:_  
 [![Lint](https://github.com/PhotoboothProject/photobooth/workflows/Lint/badge.svg?branch=dev)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Adev+workflow%3ALint)
 [![gulp-sass](https://github.com/PhotoboothProject/photobooth/workflows/gulp-sass/badge.svg?branch=dev)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Adev+workflow%3Agulp-sass)
 [![Build](https://github.com/PhotoboothProject/photobooth/workflows/Build/badge.svg?branch=dev)](https://github.com/PhotoboothProject/photobooth/actions?query=branch%3Adev+workflow%3ABuild)
@@ -40,7 +38,7 @@ _Latest development version:_
 | Generic PC         | Debian/Ubuntu                      | [gphoto2 DSLR](http://www.gphoto.org/proj/libgphoto2/support.php), webcam _*2_                                                                                      |
 | Generic PC         | Windows                            | [digiCamControl](http://digicamcontrol.com/), webcam _*2_                                                                                                           |
 
-_*1 On Raspberry Pi OS 32bit Bullseye you **must** add `arm_64bit=0` to your `/boot/config.txt` and reboot once before installing Photobooth._
+_*1 On Raspberry Pi OS 32bit Bullseye you **must** add `arm_64bit=0` to your `/boot/config.txt` and reboot once before installing Photobooth._  
 _The Raspberry Pi foundation uses a 64bit kernel while the system is 32bit. The Installation fails because the v4l2loopback module can't be compiled for a 32bit OS while using a 64bit kernel._
 
 _*2 Capture from webcam is possible e.g. using [fswebcam](https://www.sanslogic.co.uk/fswebcam/), else it only works on access via [http://localhost](http://localhost)_
@@ -48,11 +46,10 @@ _*2 Capture from webcam is possible e.g. using [fswebcam](https://www.sanslogic.
 
 ## :gear: Prerequisites
 
-| Software          | Required version       | Note
+| Software          | Tested version         | Note
 |-------------------|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-| Node.js           | >=v18.17.0             | Currently only v18 is tested. Our installer will check your Node.js version and suggest an update/downgrade if needed. Versions below v18 aren't supported anymore. |
-| npm               | >=v9.6.0               |                                                                                                                                     |
-| php               | >=v8.2                 |                                                                                                                                     |
+| Node.js           | v14, v16               | Currently only v14 and v16 are tested. Our installer will check your Node.js version and suggest an update/downgrade if needed.     |
+| php               | v7.4, v8.0, v8.1       |                                                                                                                                     |
 | Webserver         |                        | Apache, Nginx or lighttpd is needed. By default Apache webserver is installed by our installer.                                     |
 
 
@@ -120,29 +117,31 @@ Please take a look at the changelog available on [https://photoboothproject.gith
 
 Photobooth is not hardened against any kind of *targeted* attacks.
 It uses user defined commands for tasks like taking photos and is allowed to replace its own files for easy updating.
-Because of this it's not advised to operate Photobooth in an untrusted network and
+Because of this it's not advised to operate Photobooth in an untrusted network and 
 **you should absolutely not make Photobooth accessible through the internet without heavy modifications!**
 
 ### :copyright: License
 
-Photobooth source is licensed under the MIT license.
-
-Once build, Photobooth incorporates several parts and optimizations that are covered by a different license which could apply to Photobooth as well.
+Photobooth source is licensed under the MIT license.  
+  
+Once build, Photobooth incorporates several parts and optimizations that are covered by a different license which could apply to Photobooth as well.  
 All dependencies include their respective LICENSE files.
 
 ### :tada: Donation
 
 If you like our work and consider a donation, we have to tell you that we don't accept any money. We're happy about every contribution to this project and strive to make it better every day. Just get in touch with us on [Telegram](https://t.me/PhotoboothGroup) to say thank you or help us find ways to improve.
 
-If you still want to donate money to make us happy: consider a donation to the [seal station Norddeich](https://seehundstation-norddeich.de) ([donate via Paypal](https://paypal.me/seehundstation)).
+If you still want to donate money to make us happy: consider a donation to an organization that cares about (kids having) cancer. Our lead developer Andreas had blood cancer in 2001 (when he was 12 years old) and he's happy to be still alive.
+
+One good choice of an organisation to donate to would be the [DKMS](https://www.dkms.de) (they also accept donations via [paypal](https://webforms.dkms.de/en/DE/moneydonation/paypal)), but any similar organisation would be fine, too.
 
 Thanks for reading!
 
 ### :mortar_board: Tutorial
 
-[Raspberry Pi Weddingphotobooth (german)](https://www.andrerinas.de/tutorials/raspberry-pi-einen-dslr-weddingphotobooth-erstellen.html)
-[Raspberry Pi Fotobox für Hochzeiten und Geburtstage (German)](https://www.dennis-henss.de/2020/01/25/raspberry-pi-fotobox-fuer-hochzeiten-und-geburtstage)
-[Raspberry Pi Photobooth in a classic vintage plate camera](https://florianmuller.com/raspberry-pi-photobooth-in-a-classic-vintage-plate-camera)
+[Raspberry Pi Weddingphotobooth (german)](https://www.andrerinas.de/tutorials/raspberry-pi-einen-dslr-weddingphotobooth-erstellen.html)  
+[Raspberry Pi Fotobox für Hochzeiten und Geburtstage (German)](https://www.dennis-henss.de/2020/01/25/raspberry-pi-fotobox-fuer-hochzeiten-und-geburtstage)  
+[Raspberry Pi Photobooth in a classic vintage plate camera](https://florianmuller.com/raspberry-pi-photobooth-in-a-classic-vintage-plate-camera)  
 
 ### :clap: Contributors and thanks to
 
@@ -194,7 +193,3 @@ Thanks for reading!
 - [ledsi](https://github.com/ledsi)
 - [vucubcaquix](https://github.com/vucubcaquix)
 - [Spike-78](https://github.com/Spike-78)
-- [Mathias Fiege](https://www.webpension.de/)
-- [Guillaume Roure](https://github.com/Ippephyx)
-- [Francesco Miccolis](https://github.com/fmiccolis)
-

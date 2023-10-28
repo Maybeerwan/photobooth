@@ -1,14 +1,4 @@
 <?php
-
-require_once '../../lib/boot.php';
-
-use Photobooth\Image;
-use Photobooth\DatabaseManager;
-use Photobooth\DataLogger;
-use Photobooth\Enum\ImageFilterEnum;
-use Photobooth\FileDelete;
-use Photobooth\Utility\ImageUtility;
-
 header('Content-Type: application/json');
 
 if (!isset($_POST['imgData']) || empty($_POST['imgData'])) {
@@ -20,6 +10,12 @@ if (!isset($_POST['imgData']) || empty($_POST['imgData'])) {
     $logString = json_encode($logData);
     die($logString);
 }
+
+require_once '../../lib/config.php';
+require_once '../../lib/db.php';
+require_once '../../lib/image.php';
+require_once '../../lib/log.php';
+require_once '../../lib/deleteFile.php';
 
 $imageHandler = new Image();
 $imageHandler->debugLevel = $config['dev']['loglevel'];
@@ -97,7 +93,7 @@ try {
         // apply filter
         if ($config['filters']['defaults'] != 'plain') {
             try {
-                ImageUtility::applyFilter(ImageFilterEnum::tryFrom($config['filters']['defaults']), $imageResource);
+                applyFilter($config['filters']['defaults'], $imageResource);
                 $imageHandler->imageModified = true;
             } catch (Exception $e) {
                 throw new Exception('Error applying image filter.');
@@ -202,7 +198,7 @@ try {
     if (is_resource($thumbResource)) {
         imagedestroy($thumbResource);
     }
-    if ($imageResource instanceof GdImage) {
+    if (is_resource($imageResource)) {
         imagedestroy($imageResource);
     }
     if (is_array($imageHandler->errorLog) && !empty($imageHandler->errorLog)) {

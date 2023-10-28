@@ -1,16 +1,15 @@
 <?php
+define('SERVER_OS', DIRECTORY_SEPARATOR == '\\' || strtolower(substr(PHP_OS, 0, 3)) === 'win' ? 'windows' : 'linux');
 
-if (is_file(__DIR__ . '/../private/lib/polyfill.php')) {
-    require_once __DIR__ . '/../private/lib/polyfill.php';
-}
-
-use Photobooth\Environment;
-use Photobooth\Photobooth;
-use Photobooth\Helper;
-use Photobooth\Utility\ArrayUtility;
-use Photobooth\Utility\PathUtility;
+require_once __DIR__ . '/arrayDeepMerge.php';
+require_once __DIR__ . '/helper.php';
+require_once __DIR__ . '/photobooth.php';
 
 $photobooth = new Photobooth();
+$default_config_file = __DIR__ . '/../config/config.inc.php';
+$my_config_file = __DIR__ . '/../config/my.config.inc.php';
+$basepath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR;
+$rootpath = Helper::fixSeperator(Helper::getRootpath($basepath));
 
 $cmds = [
     'windows' => [
@@ -95,16 +94,15 @@ $mailTemplates = [
     ],
 ];
 
-require_once PathUtility::getAbsolutePath('config/config.inc.php');
+require_once $default_config_file;
 
-$operatingSystem = Environment::getOperatingSystem();
-$config['take_picture']['cmd'] = $cmds[$operatingSystem]['take_picture']['cmd'];
-$config['take_video']['cmd'] = $cmds[$operatingSystem]['take_video']['cmd'];
-$config['print']['cmd'] = $cmds[$operatingSystem]['print']['cmd'];
-$config['exiftool']['cmd'] = $cmds[$operatingSystem]['exiftool']['cmd'];
-$config['nodebin']['cmd'] = $cmds[$operatingSystem]['nodebin']['cmd'];
-$config['reboot']['cmd'] = $cmds[$operatingSystem]['reboot']['cmd'];
-$config['shutdown']['cmd'] = $cmds[$operatingSystem]['shutdown']['cmd'];
+$config['take_picture']['cmd'] = $cmds[SERVER_OS]['take_picture']['cmd'];
+$config['take_video']['cmd'] = $cmds[SERVER_OS]['take_video']['cmd'];
+$config['print']['cmd'] = $cmds[SERVER_OS]['print']['cmd'];
+$config['exiftool']['cmd'] = $cmds[SERVER_OS]['exiftool']['cmd'];
+$config['nodebin']['cmd'] = $cmds[SERVER_OS]['nodebin']['cmd'];
+$config['reboot']['cmd'] = $cmds[SERVER_OS]['reboot']['cmd'];
+$config['shutdown']['cmd'] = $cmds[SERVER_OS]['shutdown']['cmd'];
 
 $config['adminpanel']['view_default'] = 'expert';
 
@@ -112,12 +110,13 @@ $config['remotebuzzer']['logfile'] = 'remotebuzzer_server.log';
 $config['synctodrive']['logfile'] = 'synctodrive_server.log';
 $config['dev']['logfile'] = 'error.log';
 
+$config['ui']['github'] = 'Maybeerwan';
 $config['ui']['branding'] = 'Photobooth';
 
 $defaultConfig = $config;
 
-if (file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
-    require_once PathUtility::getAbsolutePath('config/my.config.inc.php');
+if (file_exists($my_config_file)) {
+    require_once $my_config_file;
 
     if (empty($config['mail']['subject'])) {
         if (!empty($config['ui']['language'])) {
@@ -134,7 +133,7 @@ if (file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
         }
     }
 
-    $config = ArrayUtility::mergeRecursive($defaultConfig, $config);
+    $config = array_deep_merge($defaultConfig, $config);
 }
 
 if ($config['dev']['loglevel'] > 0) {
@@ -143,18 +142,26 @@ if ($config['dev']['loglevel'] > 0) {
     error_reporting(E_ALL);
 }
 
-if (file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php')) && !is_writable(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
+if (file_exists($my_config_file) && !is_writable($my_config_file)) {
     die('Abort. Can not write config/my.config.inc.php.');
-} elseif (!file_exists(PathUtility::getAbsolutePath('config/my.config.inc.php')) && !is_writable(__DIR__ . '/../config/')) {
+} elseif (!file_exists($my_config_file) && !is_writable(__DIR__ . '/../config/')) {
     die('Abort. Can not create config/my.config.inc.php. Config folder is not writable.');
 }
 
+if (empty($config['ui']['folders_lang'])) {
+    $config['ui']['folders_lang'] = $rootpath . '/resources/lang';
+}
+
+$config['ui']['folders_lang'] = Helper::setAbsolutePath(Helper::fixSeperator($config['ui']['folders_lang']));
+
 foreach ($config['folders'] as $key => $folder) {
     if ($folder === 'data' || $folder === 'archives' || $folder === 'config' || $folder === 'private') {
-        $path = PathUtility::getAbsolutePath($folder);
+        $path = $basepath . $folder;
     } else {
-        $path = PathUtility::getAbsolutePath($config['folders']['data'] . DIRECTORY_SEPARATOR . $folder);
-        $config['foldersPublic'][$key] = PathUtility::getPublicPath($path);
+        $path = $basepath . $config['folders']['data'] . DIRECTORY_SEPARATOR . $folder;
+        $config['foldersRoot'][$key] = $config['folders']['data'] . DIRECTORY_SEPARATOR . $folder;
+
+        $config['foldersJS'][$key] = Helper::fixSeperator(Helper::getRootpath($path));
     }
 
     if (!file_exists($path)) {
@@ -165,11 +172,12 @@ foreach ($config['folders'] as $key => $folder) {
         die("Abort. The folder $folder is not writable.");
     }
 
-    $config['foldersAbs'][$key] = PathUtility::getAbsolutePath($path);
+    $path = realpath($path);
+    $config['foldersAbs'][$key] = $path;
 }
 
-$config['foldersPublic']['api'] = PathUtility::getPublicPath('api');
-$config['foldersPublic']['chroma'] = PathUtility::getPublicPath('chroma');
+$config['foldersJS']['api'] = Helper::fixSeperator(Helper::getRootpath($basepath . 'api'));
+$config['foldersJS']['chroma'] = Helper::fixSeperator(Helper::getRootpath($basepath . 'chroma'));
 
 define('PRINT_DB', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'printed.csv');
 define('PRINT_LOCKFILE', $config['foldersAbs']['data'] . DIRECTORY_SEPARATOR . 'print.lock');
@@ -185,13 +193,11 @@ if (!empty($config['preview']['killcmd']) && $config['preview']['stop_time'] < $
     $config['preview']['stop_time'] = $config['picture']['cntdwn_offset'] + 1;
 }
 
-$default_font = PathUtility::getPublicPath('resources/fonts/GreatVibes-Regular.ttf');
-$default_frame = PathUtility::getPublicPath('resources/img/frames/frame.png');
-$random_frame = PathUtility::getPublicPath('api/randomImg.php?dir=demoframes');
-$default_template = PathUtility::getAbsolutePath('resources/template/index.php');
+$default_font = realpath($basepath . 'resources/fonts/GreatVibes-Regular.ttf');
+$default_frame = realpath($basepath . 'resources/img/frames/frame.png');
 
 if (empty($config['picture']['frame'])) {
-    $config['picture']['frame'] = $random_frame;
+    $config['picture']['frame'] = $default_frame;
 }
 
 if (empty($config['textonpicture']['font'])) {
@@ -203,7 +209,7 @@ if (empty($config['collage']['frame'])) {
 }
 
 if (empty($config['collage']['placeholderpath'])) {
-    $config['collage']['placeholderpath'] = PathUtility::getPublicPath('resources/img/background/01.jpg');
+    $config['collage']['placeholderpath'] = realpath($basepath . 'resources/img/background/01.jpg');
 }
 
 if (empty($config['textoncollage']['font'])) {
@@ -222,12 +228,7 @@ if (empty($config['collage']['limit'])) {
     $config['collage']['limit'] = 4;
 }
 
-$bg_url = PathUtility::getPublicPath('resources/img/background.png');
-$logo_url = PathUtility::getPublicPath('resources/img/logo/logo-qrcode-text.png');
-
-if (empty($config['logo']['path'])) {
-    $config['logo']['path'] = $logo_url;
-}
+$bg_url = Helper::setAbsolutePath($rootpath . '/resources/img/bg_stone.jpg');
 
 if (empty($config['background']['defaults'])) {
     $config['background']['defaults'] = 'url(' . $bg_url . ')';
@@ -241,43 +242,27 @@ if (empty($config['background']['chroma'])) {
     $config['background']['chroma'] = 'url(' . $bg_url . ')';
 }
 
+if (!empty($config['picture']['frame'])) {
+    $pf_root = Helper::getRootpath($config['picture']['frame']);
+    $config['picture']['htmlframe'] = Helper::setAbsolutePath(Helper::fixSeperator($pf_root));
+}
+
+if (!empty($config['collage']['frame'])) {
+    $cf_root = Helper::getRootpath($config['collage']['frame']);
+    $config['collage']['htmlframe'] = Helper::setAbsolutePath(Helper::fixSeperator($cf_root));
+}
+
 if (empty($config['webserver']['ip'])) {
     $config['webserver']['ip'] = $photobooth->getIp();
 }
 
-if (empty($config['remotebuzzer']['serverip'])) {
-    $config['remotebuzzer']['serverip'] = $photobooth->getIp();
-}
-
 if (empty($config['qr']['url'])) {
-    $config['qr']['url'] = PathUtility::getPublicPath('api/download.php?image=');
+    $config['qr']['url'] = $photobooth->getUrl() . '/api/download.php?image=';
 }
 
-if (empty($config['ftp']['template_location']) || !Helper::testFile($config['ftp']['template_location'])) {
-    $config['ftp']['template_location'] = $default_template;
+$config['cheese_img'] = $config['ui']['shutter_cheese_img'];
+if (!empty($config['cheese_img'])) {
+    $config['cheese_img'] = Helper::setAbsolutePath($rootpath . $config['ui']['shutter_cheese_img']);
 }
 
-if (!empty($config['ftp']['urlTemplate'])) {
-    try {
-        $parameters = [
-            '%website' => $config['ftp']['website'],
-            '%baseFolder' => $config['ftp']['baseFolder'],
-            '%folder' => $config['ftp']['folder'],
-            '%title' => Helper::slugify($config['ftp']['title']),
-            '%date' => date('Y/m/d'),
-        ];
-    } catch (\Exception $e) {
-        $parameters = [
-            '%website' => $config['ftp']['website'],
-            '%baseFolder' => $config['ftp']['baseFolder'],
-            '%folder' => $config['ftp']['folder'],
-            '%title' => 'Example',
-            '%date' => date('Y/m/d'),
-        ];
-    }
-
-    $config['ftp']['processedTemplate'] = str_replace(array_keys($parameters), array_values($parameters), $config['ftp']['urlTemplate']);
-}
-
-$config['photobooth']['version'] = $photobooth->getVersion();
-$config['photobooth']['basePath'] = PathUtility::getPublicPath();
+$config['photobooth']['version'] = $photobooth->version;

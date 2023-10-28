@@ -30,17 +30,11 @@ function initRemoteBuzzerFromDOM() {
                 return;
             }
 
-            if (config.remotebuzzer.serverip) {
-                ioClient = io(
-                    window.location.protocol + '//' + config.remotebuzzer.serverip + ':' + config.remotebuzzer.port
-                );
+            if (config.webserver.ip) {
+                ioClient = io('http://' + config.webserver.ip + ':' + config.remotebuzzer.port);
+
                 photoboothTools.console.logDev(
-                    'Remote buzzer connecting to ' +
-                        window.location.protocol +
-                        '//' +
-                        config.remotebuzzer.serverip +
-                        ':' +
-                        config.remotebuzzer.port
+                    'Remote buzzer connecting to http://' + config.webserver.ip + ':' + config.remotebuzzer.port
                 );
 
                 ioClient.on('photobooth-socket', function (data) {
@@ -97,25 +91,23 @@ function initRemoteBuzzerFromDOM() {
 
                 ioClient.on('connect_error', function () {
                     photoboothTools.console.log(
-                        'ERROR: Remote buzzer client unable to connect to Remote buzzer Server - please ensure Remote buzzer server is running on ' +
-                            config.remotebuzzer.serverip +
-                            '. Set Photobooth loglevel to 1 (or above) to create log file for debugging.'
+                        'ERROR: Remote buzzer client unable to connect to webserver ip - please ensure Remote buzzer server is running on Photobooth server. Set Photobooth loglevel to 1 (or above) to create log file for debugging.'
                     );
                 });
 
                 ioClient.on('connect', function () {
                     photoboothTools.console.logDev(
-                        'Remote buzzer client successfully connected to Remote buzzer Server.'
+                        'Remote buzzer client successfully connected to Photobooth webserver ip.'
                     );
                 });
 
                 buttonController.init();
                 rotaryController.init();
 
-                rotaryController.focusSet('.stage[data-stage="start"]');
+                rotaryController.focusSet('#start');
             } else {
                 photoboothTools.console.log(
-                    'ERROR: Remote buzzer client unable to connect - Remote buzzer Server IP not defined in photobooth config!'
+                    'ERROR: Remote buzzer client unable to connect - webserver ip not defined in photobooth config!'
                 );
             }
         };
@@ -233,24 +225,28 @@ function initRemoteBuzzerFromDOM() {
 
         api.takePicture = function () {
             if (this.enabled() && config.picture.enabled) {
+                $('.resultInner').removeClass('show');
                 photoBooth.thrill('photo');
             }
         };
 
         api.takeCustom = function () {
             if (this.enabled() && config.custom.enabled) {
+                $('.resultInner').removeClass('show');
                 photoBooth.thrill('custom');
             }
         };
 
         api.takeVideo = function () {
             if (this.enabled() && config.video.enabled) {
+                $('.resultInner').removeClass('show');
                 photoBooth.thrill('video');
             }
         };
 
         api.takeCollage = function () {
             if (this.enabled() && config.collage.enabled) {
+                $('.resultInner').removeClass('show');
                 this.waitingToProcessCollage = false;
                 photoBooth.thrill('collage');
             }
@@ -266,7 +262,7 @@ function initRemoteBuzzerFromDOM() {
         };
 
         api.print = function () {
-            if ($('.stage[data-stage="result"]').is(':visible')) {
+            if ($('#result').is(':visible')) {
                 $('.printbtn').trigger('click');
                 $('.printbtn').blur();
             } else if ($('.pswp__button--print').is(':visible')) {
@@ -278,6 +274,7 @@ function initRemoteBuzzerFromDOM() {
 
         api.move2usb = function () {
             if (this.enabled()) {
+                $('.resultInner').removeClass('show');
                 photoBooth.thrill('move2usb');
             }
         };
@@ -414,13 +411,12 @@ function initRemoteBuzzerFromDOM() {
         api.click = function () {
             if (this.enabled()) {
                 // click modal if open
-                if (photoboothTools.modal.element !== null) {
-                    photoboothTools.modal.close();
+                if ($('#qrCode.modal.modal--show').exists()) {
+                    photoboothTools.modal.close('#qrCode');
+                } else if ($('#qrPswp.modal.modal--show').exists()) {
+                    photoboothTools.modal.close('#qrPswp');
                 } else {
-                    const element = document.querySelector('.focused');
-                    if (element) {
-                        element.click();
-                    }
+                    $('.focused').blur().trigger('click');
                 }
             }
         };

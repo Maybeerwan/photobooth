@@ -1,6 +1,11 @@
-/* globals photoBooth */
+/* globals photoBooth photoboothTools */
 $(function () {
-    document.querySelector('.gallery__refresh').classList.remove('hidden');
-    document.querySelector('.gallery__close').classList.add('hidden');
+    const reloadElement = $('<a class="btn btn--' + config.ui.button + ' gallery__reload rotaryfocus">');
+    reloadElement.append('<i class="' + config.icons.refresh + '"></i>');
+    reloadElement.attr('href', '#');
+    reloadElement.on('click', () => photoboothTools.reloadPage());
+    reloadElement.appendTo('.gallery__header');
+    $('.gallery__close').hide();
+
     photoBooth.openGallery();
 });

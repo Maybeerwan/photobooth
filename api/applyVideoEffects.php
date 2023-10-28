@@ -1,14 +1,13 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\DataLogger;
-use Photobooth\DatabaseManager;
-use Photobooth\Collage;
-use Photobooth\CollageConfig;
-use Photobooth\Image;
-
 header('Content-Type: application/json');
+
+require_once '../lib/db.php';
+require_once '../lib/config.php';
+require_once '../lib/log.php';
+require_once '../lib/applyEffects.php';
+require_once '../lib/collageConfig.php';
+require_once '../lib/collage.php';
+require_once '../lib/image.php';
 
 $Logger = new DataLogger(PHOTOBOOTH_LOG);
 $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
@@ -56,12 +55,6 @@ for ($i = 1; $i < 99; $i++) {
     }
 }
 
-if (is_file(__DIR__ . '/../private/api/applyVideoEffects.php')) {
-    $Logger->addLogData(['Info' => 'Using private/api/applyVideoEffects.php.']);
-    $Logger->logToFile();
-    include __DIR__ . '/../private/api/applyVideoEffects.php';
-}
-
 try {
     // If the video command created 4 images, create a cuttable collage (more flexibility to maybe come one day)
     $collageFilename = '';
@@ -72,7 +65,7 @@ try {
         $collageConfig->collageLayout = '2x4-3';
         $collageConfig->collageTakeFrame = 'off';
         $collageConfig->collagePlaceholder = false;
-        if (!Collage::createCollage($frames, $collageFilename, $config['filters']['defaults'], $collageConfig)) {
+        if (!createCollage($frames, $collageFilename, $config['filters']['defaults'], $collageConfig)) {
             throw new Exception('Could not create collage.');
         }
         $images[] = $collageFilename;

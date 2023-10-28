@@ -4,25 +4,22 @@
 // Do not modify this file directly.
 // Please use the admin panel (http://localhost/admin) to change your personal configuration.
 //
-$config = [];
+$config = array();
 
 // G E N E R A L
 // possible language values: de, en, fr, it
 $config['ui']['language'] = 'en';
-$config['ui']['folders_lang'] = 'resources/lang';
+$config['ui']['folders_lang'] = '';
 $config['adminpanel']['view'] = 'basic';
 $config['adminpanel']['experimental_settings'] = false;
 $config['dev']['loglevel'] = '1';
 $config['dev']['demo_images'] = false;
-$config['start_screen']['title'] = '';
-$config['start_screen']['title_visible'] = false;
+$config['start_screen']['title'] = 'Photobooth';
+$config['start_screen']['title_visible'] = true;
 $config['start_screen']['subtitle'] = '';
-$config['start_screen']['subtitle_visible'] = false;
+$config['start_screen']['subtitle_visible'] = true;
 // possible thumb_size values: '360px', '540px', '900px', '1080px', '1260px'
 $config['picture']['thumb_size'] = '540px';
-// specify key id (e.g. 13 is the enter key) to use that key to reload the page
-// use for example https://keycode.info to get the key code
-$config['reload']['key'] = '';
 $config['dev']['reload_on_error'] = true;
 $config['webserver']['ip'] = '';
 $config['webserver']['ssid'] = 'Photobooth';
@@ -38,29 +35,29 @@ $config['delete']['no_request'] = false;
 $config['database']['enabled'] = true;
 $config['database']['file'] = 'db';
 
+
 // F R O N T P A G E
 $config['ui']['show_fork'] = true;
 $config['ui']['skip_welcome'] = false;
-$config['ui']['admin_shortcut'] = true;
-// possible admin shortcut position values: 'top_right', 'top_left', 'bottom_right', 'bottom_left'
-$config['ui']['admin_shortcut_position'] = 'bottom-right';
-$config['logo']['enabled'] = true;
-$config['logo']['path'] = '';
-// possible logo position values: 'center', 'top_right', 'top_left', 'bottom_right', 'bottom_left'
-$config['logo']['position'] = 'center';
-$config['event']['enabled'] = false;
-$config['event']['textLeft'] = '';
+$config['logo']['enabled'] = false;
+$config['logo']['path'] = 'private/logo.png';
+// possible logo position values: 'top_right', 'top_left', 'bottom_right', 'bottom_left'
+$config['logo']['position'] = 'bottom_right';
+$config['event']['enabled'] = true;
+$config['event']['textLeft'] = 'We';
 // possible event symbol values: 'fa-camera-retro', 'fa-birthday-cake', 'fa-gift', 'fa-tree', 'fa-snowflake-o', 'fa-heart-o',
 //                               'fa-heart', 'fa-heartbeat', 'fa-apple', 'fa-anchor', 'fa-glass', 'fa-gears', 'fa-users'
 $config['event']['symbol'] = 'fa-heart-o';
-$config['event']['textRight'] = '';
+$config['event']['textRight'] = 'OpenSource';
 $config['button']['force_buzzer'] = false;
+
 
 // P I C T U R E S
 $config['picture']['enabled'] = true;
 // control countdown timer in seconds
 $config['picture']['cntdwn_time'] = '5';
 $config['picture']['cntdwn_offset'] = '0';
+$config['picture']['no_cheese'] = false;
 // control time for cheeeeese! in milliseconds
 $config['picture']['cheese_time'] = '1000';
 // possible flip values: 'off', 'horizontal', 'vertical', 'both'
@@ -70,8 +67,8 @@ $config['picture']['polaroid_effect'] = false;
 $config['picture']['polaroid_rotation'] = '0';
 $config['filters']['enabled'] = true;
 $config['filters']['defaults'] = 'plain';
-$config['filters']['disabled'] = [];
-$config['picture']['take_frame'] = true;
+$config['filters']['disabled'] = array();
+$config['picture']['take_frame'] = false;
 $config['picture']['frame'] = '';
 $config['picture']['extend_by_frame'] = true;
 $config['picture']['frame_left_percentage'] = 10;
@@ -100,6 +97,7 @@ $config['textonpicture']['font_color'] = '#ffffff';
 $config['textonpicture']['font_size'] = '80';
 $config['textonpicture']['linespace'] = '90';
 
+
 // C U S T O M
 $config['custom']['enabled'] = false;
 $config['take_custom']['cmd'] = '';
@@ -111,6 +109,7 @@ $config['custom']['key'] = '';
 $config['custom']['btn_text'] = 'Custom';
 $config['get_request']['custom'] = 'CNTDWNCUSTOM';
 $config['icons']['take_custom'] = 'fa fa-paint-brush';
+
 
 // C O L L A G E
 $config['collage']['enabled'] = true;
@@ -149,6 +148,7 @@ $config['textoncollage']['linespace'] = '90';
 // DO NOT CHANGE limit here
 $config['collage']['limit'] = '';
 
+
 // V I D E O
 $config['video']['enabled'] = false;
 $config['video']['cntdwn_time'] = '3';
@@ -160,6 +160,7 @@ $config['video']['effects'] = 'none';
 $config['video']['animation'] = true;
 $config['video']['gif'] = false;
 $config['video']['qr'] = true;
+
 
 // G A L L E R Y
 $config['gallery']['enabled'] = true;
@@ -189,6 +190,7 @@ $config['pswp']['tapAction'] = 'toggle-controls';
 $config['pswp']['doubleTapAction'] = 'zoom';
 $config['pswp']['bgClickAction'] = 'none';
 
+
 // P R E V I E W
 // Please read https://photoboothproject.github.io/FAQ#how-to-use-a-live-stream-as-background-at-countdown
 // possible preview_mode values: none, device_cam, url
@@ -209,6 +211,7 @@ $config['preview']['camera_mode'] = 'user';
 $config['preview']['asBackground'] = false;
 $config['preview']['showFrame'] = false;
 
+
 // K E Y I N G
 $config['keying']['enabled'] = false;
 // possible size values: '1000px', '1500px', '2000px', '2500px'
@@ -219,6 +222,7 @@ $config['keying']['variant'] = 'seriouslyjs';
 $config['keying']['seriouslyjs_color'] = '#62af74';
 $config['keying']['background_path'] = 'resources/img/background';
 $config['keying']['show_all'] = false;
+
 
 // P R I N T
 $config['button']['show_cups'] = false;
@@ -256,13 +260,16 @@ $config['textonprint']['font_color'] = '#ffffff';
 $config['textonprint']['font_size'] = '100';
 $config['textonprint']['linespace'] = '100';
 
+
 // Q R  -  C O D E
 $config['qr']['enabled'] = true;
+$config['qr']['ecLevel'] = 'QR_ECLEVEL_M';
 $config['qr']['url'] = '';
 $config['qr']['append_filename'] = true;
 $config['qr']['custom_text'] = false;
 $config['qr']['text'] = '';
 $config['qr']['result'] = 'hidden';
+
 
 // E -  M A I L
 // Please read https://photoboothproject.github.io/FAQ#ive-trouble-setting-up-e-mail-config-how-do-i-solve-my-problem
@@ -270,9 +277,9 @@ $config['qr']['result'] = 'hidden';
 // If send_all_later is enabled, a checkbox to save the current mail address for later in {mail_file}.txt is visible
 $config['mail']['enabled'] = false;
 $config['mail']['send_all_later'] = false;
-$config['mail']['subject'] = '';    // if empty, default translation is used
-$config['mail']['text'] = '';       // if empty, default translation is used
-$config['mail']['alt_text'] = '';   // if empty, default translation is used
+$config['mail']['subject'] = ''; 	// if empty, default translation is used
+$config['mail']['text'] = '';		// if empty, default translation is used
+$config['mail']['alt_text'] = '';		// if empty, default translation is used
 $config['mail']['is_html'] = false;
 $config['mail']['host'] = 'smtp.example.com';
 $config['mail']['username'] = 'photobooth@example.com';
@@ -283,16 +290,15 @@ $config['mail']['file'] = 'mail-adresses';
 $config['mail']['secure'] = 'tls';
 $config['mail']['port'] = '587';
 
+
 // S T A N D A L O N E   S L I D E S H O W
 $config['slideshow']['refreshTime'] = '60';
 $config['slideshow']['pictureTime'] = '3000';
 $config['slideshow']['randomPicture'] = true;
 $config['slideshow']['use_thumbs'] = false;
 
+
 // R E M O T E   B U Z Z E R
-$config['remotebuzzer']['startserver'] = false;
-$config['remotebuzzer']['serverip'] = '';
-$config['remotebuzzer']['port'] = 14711;
 $config['remotebuzzer']['usebuttons'] = false;
 $config['remotebuzzer']['userotary'] = false;
 $config['remotebuzzer']['enable_standalonegallery'] = false;
@@ -311,6 +317,7 @@ $config['remotebuzzer']['printgpio'] = 26;
 $config['remotebuzzer']['shutdownbutton'] = false;
 $config['remotebuzzer']['shutdowngpio'] = 16;
 $config['remotebuzzer']['shutdownholdtime'] = '5';
+$config['remotebuzzer']['port'] = 14711;
 $config['remotebuzzer']['debounce'] = 30;
 $config['remotebuzzer']['rebootbutton'] = false;
 $config['remotebuzzer']['rebootgpio'] = 8;
@@ -341,10 +348,12 @@ $config['remotebuzzer']['move2usbgpio'] = 6;
 $config['remotebuzzer']['move2usbled'] = false;
 $config['remotebuzzer']['move2usbledgpio'] = 11;
 
+
 // S Y N C  T O  U S B  S T I C K
 $config['synctodrive']['enabled'] = false;
 $config['synctodrive']['target'] = 'photobooth'; //Default target for the sync script
 $config['synctodrive']['interval'] = 300;
+
 
 // G E T  R E Q U E S T
 $config['get_request']['countdown'] = false;
@@ -354,23 +363,6 @@ $config['get_request']['picture'] = 'CNTDWNPHOTO';
 $config['get_request']['collage'] = 'CNTDWNCOLLAGE';
 $config['get_request']['video'] = 'CNTDWNVIDEO';
 
-// FTP
-$config['ftp']['enabled'] = false;
-$config['ftp']['baseURL'] = '';
-$config['ftp']['port'] = 21;
-$config['ftp']['username'] = '';
-$config['ftp']['password'] = '';
-$config['ftp']['baseFolder'] = '';
-$config['ftp']['folder'] = '';
-$config['ftp']['title'] = '';
-$config['ftp']['appendDate'] = false;
-$config['ftp']['useForQr'] = false;
-$config['ftp']['website'] = '';
-$config['ftp']['urlTemplate'] = '';
-$config['ftp']['create_webpage'] = false;
-$config['ftp']['template_location'] = '';
-$config['ftp']['upload_thumb'] = false;
-$config['ftp']['delete'] = false;
 
 // A U T H E N T I C A T I O N
 $config['login']['enabled'] = false;
@@ -378,8 +370,6 @@ $config['login']['username'] = 'Photo';
 $config['login']['password'] = '';
 $config['login']['keypad'] = false;
 $config['login']['pin'] = '';
-$config['login']['rental_keypad'] = false;
-$config['login']['rental_pin'] = '';
 $config['protect']['admin'] = true;
 $config['protect']['localhost_admin'] = true;
 $config['protect']['index'] = false;
@@ -388,83 +378,78 @@ $config['protect']['index_redirect'] = 'login';
 $config['protect']['manual'] = false;
 $config['protect']['localhost_manual'] = false;
 
+
 // U S E R   I N T E R F A C E
 // possible style values: "classic", "modern", "modern_squared", "custom"
 $config['ui']['style'] = 'modern_squared';
 // possible button values: "rounded", "modern", "modern_squared", "custom"
 $config['ui']['button'] = 'modern_squared';
-// possible image values:
-// - ''
-// - '/resources/img/cheese/camera_up.png'
-// - '/resources/img/cheese/camera_down.png'
-// - '/resources/img/cheese/camera_left.png'
-// - '/resources/img/cheese/camera_right.png'
-// - '/private/cheese.png'
-$config['ui']['shutter_cheese_img'] = '';
+$config['ui']['shutter_animation'] = true;
+// possible image values: "none", "top", "bottom", "left", "right", "/private/cheese.png"
+$config['ui']['shutter_cheese_img'] = 'none';
 $config['button']['show_fs'] = false;
 $config['button']['homescreen'] = true;
-$config['button']['reload'] = false;
 $config['ui']['result_buttons'] = true;
 $config['ui']['font_size'] = '16px';
-$config['colors']['countdown'] = '#1b3faa';
-$config['colors']['background_countdown'] = '#8d9fd4';
-$config['colors']['cheese'] = '#aa1b3f';
+$config['colors']['countdown'] = '#ffffff';
+$config['colors']['background_countdown'] = '#2e2e2e';
+$config['colors']['cheese'] = '#ffffff';
 $config['background']['defaults'] = '';
 $config['background']['chroma'] = '';
 $config['ui']['decore_lines'] = true;
 $config['ui']['rounded_corners'] = false;
-$config['colors']['primary'] = '#1b3faa';
-$config['colors']['primary_light'] = '#e8ebf6';
-$config['colors']['secondary'] = '#5f78c3';
-$config['colors']['highlight'] = '#8d9fd4';
+$config['colors']['primary'] = '#2e2e2e';
+$config['colors']['secondary'] = '#212121';
+$config['colors']['highlight'] = '#C0C0C0';
 $config['colors']['font'] = '#c9c9c9';
-$config['colors']['font_secondary'] = '#333333';
 $config['colors']['button_font'] = '#ffffff';
-$config['colors']['start_font'] = '#333333';
-$config['colors']['panel'] = '#1b3faa';
+$config['colors']['start_font'] = '#ffffff';
+$config['colors']['panel'] = '#1B3FAA';
+$config['colors']['hover_panel'] = '#2e2e2e';
 $config['colors']['border'] = '#eeeeee';
-$config['colors']['box'] = '#e8ebf6';
+$config['colors']['box'] = '#f8f9fc';
 $config['colors']['gallery_button'] = '#ffffff';
 
+
 // I C O N S
-$config['icons']['admin_back'] = 'fa fa-long-arrow-left';
+$config['icons']['admin_back'] = 'fa fa-long-arrow-left fa-3x';
 $config['icons']['admin_back_short'] = 'fa fa-arrow-left';
-$config['icons']['admin_menutoggle'] = 'fa fa-bars';
-$config['icons']['admin_save'] = 'fa fa-circle-notch fa-spin fa-fw';
+$config['icons']['admin_menutoggle'] = 'fa fa-bars fa-3x';
+$config['icons']['admin_save'] = 'fa fa-circle-o-notch fa-spin fa-fw';
 $config['icons']['admin_save_success'] = 'fa fa-check';
 $config['icons']['admin_save_error'] = 'fa fa-times';
-$config['icons']['admin_signout'] = 'fa fa-sign-out';
+$config['icons']['admin_signout'] = 'fa fa-sign-out fa-3x';
 $config['icons']['admin'] = 'fa fa-cog';
-$config['icons']['home'] = 'fa fa-house';
-$config['icons']['gallery'] = 'fa fa-image';
+$config['icons']['home'] = 'fa fa-home';
+$config['icons']['gallery'] = 'fa fa-picture-o';
 $config['icons']['dependencies'] = 'fa fa-list-ul';
 $config['icons']['update'] = 'fa fa-tasks';
 $config['icons']['slideshow'] = 'fa fa-play';
 $config['icons']['chromaCapture'] = 'fa fa-paint-brush';
 $config['icons']['faq'] = 'fa fa-question-circle';
 $config['icons']['manual'] = 'fa fa-info-circle';
-$config['icons']['telegram'] = 'fa-brands fa-telegram';
+$config['icons']['telegram'] = 'fa fa-telegram';
 $config['icons']['cups'] = 'fa fa-print';
 $config['icons']['take_picture'] = 'fa fa-camera';
 $config['icons']['take_collage'] = 'fa fa-th-large';
-$config['icons']['take_video'] = 'fa fa-video';
+$config['icons']['take_video'] = 'fa fa-video-camera';
 $config['icons']['close'] = 'fa fa-times';
-$config['icons']['refresh'] = 'fa fa-arrows-rotate';
-$config['icons']['delete'] = 'fa fa-trash-can';
+$config['icons']['refresh'] = 'fa fa-refresh';
+$config['icons']['delete'] = 'fa fa-trash';
 $config['icons']['print'] = 'fa fa-print';
-$config['icons']['save'] = 'fa fa-floppy-disk';
+$config['icons']['save'] = 'fa fa-floppy-o';
 $config['icons']['download'] = 'fa fa-download';
 $config['icons']['qr'] = 'fa fa-qrcode';
 $config['icons']['mail'] = 'fa fa-envelope';
 $config['icons']['mail_close'] = 'fa fa-times';
 $config['icons']['mail_submit'] = 'fa fa-spinner fa-spin';
-$config['icons']['filter'] = 'fa fa-wand-magic-sparkles';
+$config['icons']['filter'] = 'fa fa-magic';
 $config['icons']['chroma'] = 'fa fa-paint-brush';
-$config['icons']['fullscreen'] = 'fa fa-maximize';
+$config['icons']['fullscreen'] = 'fa fa-arrows-alt';
 $config['icons']['share'] = 'fa fa-share-alt';
 $config['icons']['zoom'] = 'fa fa-search-plus';
-$config['icons']['logout'] = 'fa fa-right-from-bracket';
-$config['icons']['date'] = 'fa fa-clock';
+$config['icons']['logout'] = 'fa fa-sign-out';
+$config['icons']['date'] = 'fa fa-clock-o';
 $config['icons']['spinner'] = 'fa fa-cog fa-spin';
 $config['icons']['update_git'] = 'fa fa-play-circle';
 $config['icons']['password_visibility'] = 'fa fa-eye';
@@ -472,10 +457,12 @@ $config['icons']['password_toggle'] = 'fa-eye fa-eye-slash';
 $config['icons']['slideshow_play'] = 'fa fa-play';
 $config['icons']['slideshow_toggle'] = 'fa-play fa-pause';
 
+
 // J P E G   Q U A L I T Y
 $config['jpeg_quality']['image'] = 100;
 $config['jpeg_quality']['chroma'] = 100;
 $config['jpeg_quality']['thumb'] = 60;
+
 
 // C O M M A N D S
 $config['take_picture']['cmd'] = '';
@@ -508,3 +495,4 @@ $config['reset']['remove_images'] = true;
 $config['reset']['remove_mailtxt'] = false;
 $config['reset']['remove_config'] = false;
 $config['reset']['remove_print_db'] = false;
+

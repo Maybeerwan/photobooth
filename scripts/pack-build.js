@@ -50,7 +50,6 @@ function createArchive(fileName, archive) {
 
     archive.directory('admin');
     archive.directory('api');
-    archive.directory('bin');
     archive.directory('chroma');
     archive.directory('gallery');
     archive.directory('lib');
@@ -60,14 +59,12 @@ function createArchive(fileName, archive) {
     archive.directory('slideshow');
     archive.directory('template');
     archive.directory('test');
-    archive.directory('tools');
     archive.directory('vendor');
     archive.file('config/.htaccess');
     archive.file('config/config.inc.php');
     archive.file('faq/index.php');
-    archive.file('faq/faq.md');
+    archive.file('faq/faq.md.php');
     archive.file('HEAD');
-    archive.file('composer.json');
     archive.file('index.php');
     archive.file('LICENSE');
     archive.file('LICENSE_NOTICE');
@@ -75,7 +72,8 @@ function createArchive(fileName, archive) {
     archive.file('private/README.md');
     archive.file('README.md');
     archive.file('welcome/index.php');
-    archive.directory('node_modules/@fortawesome/fontawesome-free/');
+    archive.directory('node_modules/@andreasremdt/simple-translator/');
+    archive.directory('node_modules/font-awesome/');
     archive.directory('node_modules/material-icons');
     archive.directory('node_modules/photoswipe/');
     archive.file('node_modules/github-markdown-css/github-markdown.css');
@@ -86,6 +84,8 @@ function createArchive(fileName, archive) {
     archive.directory('node_modules/marvinj/marvinj/release/');
     archive.file('node_modules/normalize.css/LICENSE.md');
     archive.file('node_modules/normalize.css/normalize.css');
+    archive.file('node_modules/whatwg-fetch/LICENSE');
+    archive.file('node_modules/whatwg-fetch/dist/fetch.umd.js');
 
     archive.directory('node_modules/accepts');
     archive.directory('node_modules/after');
@@ -134,7 +134,7 @@ function createArchive(fileName, archive) {
     archive.directory('node_modules/ws');
     archive.directory('node_modules/xmlhttprequest-ssl');
     archive.directory('node_modules/yeast');
-
+    
     output.on('close', function () {
         console.log(`Wrote ${archive.pointer()} bytes to ${fileName}`.verbose);
     });

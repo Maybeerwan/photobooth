@@ -1,14 +1,10 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\Helper;
-use Photobooth\DataLogger;
-use Photobooth\PrintManager;
-use Photobooth\Environment;
-use Photobooth\Utility\PathUtility;
-
 header('Content-Type: application/json');
+
+require_once '../lib/config.php';
+require_once '../lib/helper.php';
+require_once '../lib/db.php';
+require_once '../lib/printdb.php';
 
 $Logger = new DataLogger(PHOTOBOOTH_LOG);
 $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
@@ -49,7 +45,6 @@ if (isset($data['type'])) {
         if ((isset($newConfig['login']['password']) && !empty($newConfig['login']['password'])) || $newConfig['login']['keypad']) {
             if ($newConfig['login']['keypad'] && strlen($newConfig['login']['pin']) != 4) {
                 $Logger->addLogData(['keypad' => 'Keypad pin reset.']);
-                $Logger->addLogData(['keypad' => 'Length: ' . strlen($newConfig['login']['pin']) . ' Expected length: 4']);
                 $newConfig['login']['enabled'] = false;
                 $newConfig['login']['keypad'] = false;
                 $newConfig['login']['pin'] = '';
@@ -57,6 +52,7 @@ if (isset($data['type'])) {
             if (isset($newConfig['login']['password']) && !empty($newConfig['login']['password'])) {
                 // allow login via password, but we might have disabled because the PIN length did not match our requirements
                 $newConfig['login']['enabled'] = true;
+
                 if ($newConfig['login']['password'] != $config['login']['password']) {
                     $hashing = password_hash($newConfig['login']['password'], PASSWORD_DEFAULT);
                     $newConfig['login']['password'] = $hashing;
@@ -74,20 +70,6 @@ if (isset($data['type'])) {
         $newConfig['login']['pin'] = '';
     }
 
-    if (isset($newConfig['login']['rental_keypad']) && $newConfig['login']['rental_keypad'] == true) {
-        if (strlen($newConfig['login']['rental_pin']) != 4 || $newConfig['login']['rental_pin'] === $newConfig['login']['pin']) {
-            $Logger->addLogData(['rental_keypad' => 'Rental keypad pin reset.']);
-            $Logger->addLogData(['rental_keypad' => 'Length: ' . strlen($newConfig['login']['rental_pin']) . ' Expected length: 4']);
-            if ($newConfig['login']['rental_pin'] === $newConfig['login']['pin']) {
-                $Logger->addLogData(['rental_keypad' => 'Rental keypad pin must be different from login pin.']);
-            }
-            $newConfig['login']['rental_keypad'] = false;
-            $newConfig['login']['rental_pin'] = '';
-        }
-    } else {
-        $newConfig['login']['rental_pin'] = '';
-    }
-
     if (isset($newConfig['filters']['enabled']) && $newConfig['filters']['enabled'] == true) {
         if (isset($newConfig['picture']['keep_original']) && !$newConfig['picture']['keep_original']) {
             $newConfig['filters']['enabled'] = false;
@@ -100,7 +82,32 @@ if (isset($data['type'])) {
         $Logger->addLogData(['preview' => 'Device cam takes picture disabled. Can take images from preview only from gphoto2 and device cam preview.']);
     }
 
-    if (Environment::isWindows()) {
+    if ($newConfig['ui']['style'] === 'custom') {
+        if (
+            !is_readable('../template/custom.template.php') &&
+            !is_readable('../resources/css/custom_style.css') &&
+            !is_readable('../resources/css/custom_chromakeying.css') &&
+            !is_readable('../resources/css/custom_chromacapture.css')
+        ) {
+            $newConfig['ui']['style'] = 'modern_squared';
+            $Logger->addLogData(['ui' => 'No custom style resources found. Falling back to modern squared style.']);
+        } else {
+            if (!file_exists('../template/custom.template.php')) {
+                copy('../template/modern.template.php', '../template/custom.template.php');
+            }
+            if (!file_exists('../resources/css/custom_style.css')) {
+                copy('../resources/css/modern_style.css', '../resources/css/custom_style.css');
+            }
+            if (!file_exists('../resources/css/custom_chromakeying.css')) {
+                copy('../resources/css/modern_chromakeying.css', '../resources/css/custom_chromakeying.css');
+            }
+            if (!file_exists('../resources/css/custom_chromacapture.css')) {
+                copy('../resources/css/modern_chromacapture.css', '../resources/css/custom_chromacapture.css');
+            }
+        }
+    }
+
+    if (SERVER_OS === 'windows') {
         if (!empty($newConfig['remotebuzzer']['enabled'])) {
             $newConfig['remotebuzzer']['enabled'] = false;
             $Logger->addLogData(['remotebuzzer' => 'Remotebuzzer server unsupported on Windows.']);
@@ -138,11 +145,7 @@ if (isset($data['type'])) {
     } elseif ($collageLayout == 'collage.json' && file_exists($collageConfigFilePath)) {
         $collageConfig = json_decode(file_get_contents($collageConfigFilePath), true);
         if (is_array($collageConfig)) {
-            if (array_key_exists('layout', $collageConfig)) {
-                $newConfig['collage']['limit'] = count($collageConfig['layout']);
-            } else {
-                $newConfig['collage']['limit'] = count($collageConfig);
-            }
+            $newConfig['collage']['limit'] = count($collageConfig);
         } else {
             $newConfig['collage']['limit'] = 4;
         }
@@ -160,67 +163,73 @@ if (isset($data['type'])) {
             $Logger->addLogData(['collage' => 'Placeholder position not in range. Placeholder disabled.']);
         }
 
-        if (
-            empty($newConfig['collage']['placeholderpath']) ||
-            !is_array(
-                @getimagesize(
-                    str_starts_with($newConfig['collage']['placeholderpath'], 'http')
-                        ? $newConfig['collage']['placeholderpath']
-                        : $_SERVER['DOCUMENT_ROOT'] . $newConfig['collage']['placeholderpath']
-                )
-            )
-        ) {
+        if (empty($newConfig['collage']['placeholderpath']) || !is_array(@getimagesize($newConfig['collage']['placeholderpath']))) {
             $newConfig['collage']['placeholder'] = false;
-            $Logger->addLogData(['collage' => 'Collage Placeholder does not exist or is empty. Collage Placeholder disabled.']);
+            $Logger->addLogData(['collage' => 'Collage Placeholder does not exist or is empty. Collage Placeholder disabled. Note: Must be an absoloute path']);
             $Logger->addLogData(['collage' => empty($newConfig['collage']['placeholderpath']) ? 'Empty.' : $newConfig['collage']['placeholderpath']]);
         }
     }
 
-    if ($newConfig['picture']['take_frame'] && $newConfig['picture']['frame'] === '') {
-        $newConfig['picture']['take_frame'] = false;
-        $Logger->addLogData(['frame' => empty($newConfig['picture']['frame']) ? 'Empty.' : $newConfig['picture']['frame']]);
+    if ($newConfig['picture']['take_frame']) {
+        if (empty($newConfig['picture']['frame']) || !is_array(@getimagesize($newConfig['picture']['frame']))) {
+            $newConfig['picture']['take_frame'] = false;
+            $Logger->addLogData(['frame' => 'Picture frame does not exist or is empty. Picture frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['picture']['frame']) ? 'Empty.' : $newConfig['picture']['frame']]);
+        }
     }
 
-    if ($newConfig['collage']['take_frame'] && $newConfig['collage']['frame'] === '') {
-        $newConfig['collage']['take_frame'] = false;
-        $Logger->addLogData(['frame' => empty($newConfig['collage']['frame']) ? 'Empty.' : $newConfig['collage']['frame']]);
+    if ($newConfig['collage']['take_frame']) {
+        if (empty($newConfig['collage']['frame']) || !is_array(@getimagesize($newConfig['collage']['frame']))) {
+            $newConfig['collage']['take_frame'] = false;
+            $Logger->addLogData(['frame' => 'Collage frame does not exist or is empty. Collage frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['collage']['frame']) ? 'Empty.' : $newConfig['collage']['frame']]);
+        }
     }
 
-    if ($newConfig['print']['print_frame'] && $newConfig['print']['frame'] === '') {
-        $newConfig['print']['print_frame'] = false;
-        $Logger->addLogData(['frame' => empty($newConfig['print']['frame']) ? 'Empty.' : $newConfig['print']['frame']]);
+    if ($newConfig['print']['print_frame']) {
+        if (empty($newConfig['print']['frame']) || !is_array(@getimagesize($newConfig['print']['frame']))) {
+            $newConfig['print']['print_frame'] = false;
+            $Logger->addLogData(['frame' => 'Print frame does not exist or is empty. Printing frame disabled. Note: Must be an absoloute path']);
+            $Logger->addLogData(['frame' => empty($newConfig['print']['frame']) ? 'Empty.' : $newConfig['print']['frame']]);
+        }
     }
 
-    if ($newConfig['textonpicture']['enabled'] && ($newConfig['textonpicture']['font'] === '' || !file_exists(PathUtility::getAbsolutePath($newConfig['textonpicture']['font'])))) {
-        $newConfig['textonpicture']['enabled'] = false;
-        $Logger->addLogData(['font' => 'Picture font does not exist or is empty. Disabled text on picture. Note: Must be an absoloute path.']);
-        $Logger->addLogData(['font' => empty($newConfig['textonpicture']['font']) ? 'Empty.' : $newConfig['textonpicture']['font']]);
+    if ($newConfig['textonpicture']['enabled']) {
+        if (empty($newConfig['textonpicture']['font']) || !file_exists($newConfig['textonpicture']['font'])) {
+            $newConfig['textonpicture']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Picture font does not exist or is empty. Disabled text on picture. Note: Must be an absoloute path']);
+            $Logger->addLogData(['font' => empty($newConfig['textonpicture']['font']) ? 'Empty.' : $newConfig['textonpicture']['font']]);
+        }
     }
 
-    if ($newConfig['textoncollage']['enabled'] && ($newConfig['textoncollage']['font'] === '' || !file_exists(PathUtility::getAbsolutePath($newConfig['textoncollage']['font'])))) {
-        $newConfig['textoncollage']['enabled'] = false;
-        $Logger->addLogData(['font' => 'Collage font does not exist or is empty. Disabled text on collage. Note: Must be an absoloute path.']);
-        $Logger->addLogData(['font' => empty($newConfig['textoncollage']['font']) ? 'Empty.' : $newConfig['textoncollage']['font']]);
+    if ($newConfig['textoncollage']['enabled']) {
+        if (empty($newConfig['textoncollage']['font']) || !file_exists($newConfig['textoncollage']['font'])) {
+            $newConfig['textoncollage']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Collage font does not exist or is empty. Disabled text on collage. Note: Must be an absoloute path.']);
+            $Logger->addLogData(['font' => empty($newConfig['textoncollage']['font']) ? 'Empty.' : $newConfig['textoncollage']['font']]);
+        }
     }
 
-    if ($newConfig['textonprint']['enabled'] && ($newConfig['textonprint']['font'] === '' || !file_exists(PathUtility::getAbsolutePath($newConfig['textonprint']['font'])))) {
-        $newConfig['textonprint']['enabled'] = false;
-        $Logger->addLogData(['font' => 'Print font does not exist or is empty. Disabled text on print. Note: Must be an absoloute path.']);
-        $Logger->addLogData(['font' => empty($newConfig['textonprint']['font']) ? 'Empty.' : $newConfig['textonprint']['font']]);
+    if ($newConfig['textonprint']['enabled']) {
+        if (empty($newConfig['textonprint']['font']) || !file_exists($newConfig['textonprint']['font'])) {
+            $newConfig['textonprint']['enabled'] = false;
+            $Logger->addLogData(['font' => 'Print font does not exist or is empty. Disabled text on print. Note: Must be an absoloute path.']);
+            $Logger->addLogData(['font' => empty($newConfig['textonprint']['font']) ? 'Empty.' : $newConfig['textonprint']['font']]);
+        }
     }
 
     if ($newConfig['logo']['enabled']) {
         $logoPath = $newConfig['logo']['path'];
-        if (empty($logoPath) || !file_exists($_SERVER['DOCUMENT_ROOT'] . $logoPath)) {
+        if (empty($logoPath) || !file_exists('..' . DIRECTORY_SEPARATOR . $logoPath)) {
             $newConfig['logo']['enabled'] = false;
             $Logger->addLogData(['logo' => 'Logo file path does not exist or is empty. Logo disabled.']);
         } else {
-            $newConfig['logo']['path'] = PathUtility::fixFilePath($logoPath);
+            $newConfig['logo']['path'] = Helper::fixSeperator($logoPath);
             $ext = pathinfo($logoPath, PATHINFO_EXTENSION);
             if ($ext === 'svg') {
                 $Logger->addLogData(['logo' => 'Logo file is SVG, path saved.']);
             } else {
-                $imageInfo = @getimagesize($_SERVER['DOCUMENT_ROOT'] . $logoPath);
+                $imageInfo = @getimagesize('..' . DIRECTORY_SEPARATOR . $logoPath);
                 if ($imageInfo === false) {
                     $newConfig['logo']['enabled'] = false;
                     $Logger->addLogData(['logo' => 'Logo file is not a supported image type [' . $ext . ']. Logo disabled.']);
@@ -233,8 +242,8 @@ if (isset($data['type'])) {
 
     $content = "<?php\n\$config = " . var_export(Helper::arrayRecursiveDiff($newConfig, $defaultConfig), true) . ';';
 
-    if (file_put_contents(PathUtility::getAbsolutePath('config/my.config.inc.php'), $content)) {
-        Helper::clearCache(PathUtility::getAbsolutePath('config/my.config.inc.php'));
+    if (file_put_contents($my_config_file, $content)) {
+        Helper::clearCache($my_config_file);
         $Logger->addLogData(['config' => 'New config saved']);
 
         if ($data['type'] == 'reset') {
@@ -287,8 +296,8 @@ if (isset($data['type'])) {
 
             if ($newConfig['reset']['remove_config']) {
                 // delete personal config
-                if (is_file(PathUtility::getAbsolutePath('config/my.config.inc.php'))) {
-                    unlink(PathUtility::getAbsolutePath('config/my.config.inc.php'));
+                if (is_file('../config/my.config.inc.php')) {
+                    unlink('../config/my.config.inc.php');
                     $Logger->addLogData(['my.config.inc.php' => 'deleted']);
                 }
             }
@@ -322,6 +331,6 @@ if (isset($data['type'])) {
 }
 $Logger->logToFile();
 
-// Kill service daemons after config has changed
-require_once PathUtility::getAbsolutePath('lib/services_stop.php');
+/* Kill service daemons after config has changed */
+require_once '../lib/services_stop.php';
 exit();

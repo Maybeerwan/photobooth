@@ -9,7 +9,7 @@ let ssTimeOut,
 const ssDelay = config.slideshow.pictureTime,
     ssButtonClass = '.pswp__button--playpause',
     interval = 1000 * config.slideshow.refreshTime,
-    ajaxurl = config.foldersPublic.api + '/gallery.php?status';
+    ajaxurl = config.foldersJS.api + '/gallery.php?status';
 
 // eslint-disable-next-line no-unused-vars
 function initPhotoSlideFromDOM(gallerySelector) {
@@ -156,9 +156,8 @@ $(function () {
         $('#gallery').addClass('scrollbar');
     }
 
-    const reloadElement = $('<button class="button gallery__refresh rotaryfocus" data-command="gallery__refresh">');
-    reloadElement.append('<span class="button--icon"><i class="' + config.icons.refresh + '"></i></span>');
-    reloadElement.append('<span class="button--label">Reload</span>');
+    const reloadElement = $('<a class="btn btn--' + config.ui.button + ' gallery__reload rotaryfocus">');
+    reloadElement.append('<i class="' + config.icons.refresh + '"></i>');
     reloadElement.attr('href', '#');
     reloadElement.on('click', () => photoboothTools.reloadPage());
     reloadElement.appendTo('.gallery__header');

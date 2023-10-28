@@ -1,11 +1,7 @@
 <?php
-
-use Photobooth\Service\LanguageService;
-use Photobooth\Utility\AdminInput;
-
-$languageService = LanguageService::getInstance();
-
 foreach ($configsetup as $section => $fields) {
+    html_src_indent($indent);
+    html_src_indent($indent++);
 
     // hidden
     $hiddenSection = 'visible';
@@ -18,8 +14,10 @@ foreach ($configsetup as $section => $fields) {
     // section container
     echo '<div class="adminSection mb-8 ' . $hiddenSection . '" ' . $sectionId . '>';
 
+    html_src_indent($indent);
+
     // headline
-    echo '<h1 class="text-brand-1 text-xl font-bold pt-4 px-4 lg:pt-8 lg:px-8 mb-4">' . $languageService->translate($section) . '</h1>';
+    echo '<h1 class="text-brand-1 text-xl font-bold pt-4 px-4 lg:pt-8 lg:px-8 mb-4"> <span data-i18n="' . $section . '">' . $section . '</span></h1>';
 
     // grid
     echo '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-8 px-4 lg:px-8">';
@@ -37,45 +35,48 @@ foreach ($configsetup as $section => $fields) {
 
         $i18ntag = $section . ':' . $key;
 
+        html_src_indent($indent++);
+
         echo '<!-- ' . strtoupper($setting['type']) . ' ' . strtoupper($setting['name']) . ' -->';
         echo '<div class="flex flex-col rounded-xl p-3 shadow-xl bg-white ' . $hidden . '" id="' . $i18ntag . '">';
 
-        // Populate setting elements by type
+        /************************************
+         ** Populate setting elements by type
+         ************************************/
 
         switch ($setting['type']) {
-            case 'icon':
-                echo AdminInput::renderIcon($setting, $i18ntag);
-                break;
             case 'input':
             case 'number':
-                echo AdminInput::renderInput($setting, $i18ntag);
+                echo getTextInput($setting, $i18ntag);
                 break;
             case 'range':
-                echo AdminInput::renderRange($setting, $i18ntag);
+                echo getRangeInput($setting, $i18ntag);
                 break;
             case 'color':
-                echo AdminInput::renderColor($setting, $i18ntag);
+                echo getColorInput($setting, $i18ntag);
                 break;
             case 'hidden':
-                echo AdminInput::renderHidden($setting);
+                echo '<input type="hidden" name="' . $setting['name'] . '" value="' . $setting['value'] . '"/>';
                 break;
             case 'checkbox':
-                echo AdminInput::renderCheckbox($setting, $i18ntag);
+                echo getCheckbox($setting, $i18ntag);
                 break;
             case 'multi-select':
             case 'select':
-                echo AdminInput::renderSelect($setting, $i18ntag);
+                echo getSelect($setting, $i18ntag);
                 break;
             case 'button':
-                echo AdminInput::renderButton($setting, $i18ntag, $key, $config);
-                break;
-            case 'image':
-                echo AdminInput::renderImageSelect($setting, $i18ntag);
+                echo getInputButton($setting, $i18ntag, $key, $config);
                 break;
         }
 
         echo '</div>';
+        --$indent;
     }
     echo '</div>';
+
+    html_src_indent(--$indent);
+
     echo '</div>';
 }
+?>

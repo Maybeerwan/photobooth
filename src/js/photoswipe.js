@@ -51,14 +51,18 @@ function initPhotoSwipeFromDOM(gallerySelector) {
         setSlideshowState(ssButtonClass, false);
 
         gallery.on('change', function () {
-            photoboothTools.modal.close();
+            photoBooth.resetMailForm();
+            $('.send-mail').removeClass('mail-active').fadeOut('fast');
+            photoboothTools.modal.close('#qrPswp');
             if (ssRunning) {
                 gotoNextSlide();
             }
         });
 
         gallery.on('close', function () {
-            photoboothTools.modal.close();
+            photoBooth.resetMailForm();
+            $('.send-mail').removeClass('mail-active').fadeOut('fast');
+            photoboothTools.modal.close('#qrPswp');
             if (ssRunning) {
                 setSlideshowState(ssButtonClass, false);
                 $('.pswp__button--playpause i:first').toggleClass(config.icons.slideshow_toggle);
@@ -134,7 +138,9 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                     html: '<i class="' + config.icons.mail + '"></i>',
                     // eslint-disable-next-line no-unused-vars
                     onClick: (event, el, pswp) => {
-                        photoBooth.showMailForm(pswp.currSlide.data.src.split('\\').pop().split('/').pop());
+                        $('.pswp').append($('.send-mail'));
+                        photoBooth.resetMailForm();
+                        photoBooth.toggleMailDialog(pswp.currSlide.data.src.split('\\').pop().split('/').pop());
                     }
                 });
             }
@@ -169,15 +175,30 @@ function initPhotoSwipeFromDOM(gallerySelector) {
 
             if (config.qr.enabled) {
                 gallery.pswp.ui.registerElement({
+                    name: 'qrPswp',
+                    className: 'modal',
+                    appendTo: 'root',
+                    // eslint-disable-next-line no-unused-vars
+                    onInit: (el, pswp) => {
+                        el.setAttribute('id', 'qrPswp');
+                    }
+                });
+
+                gallery.pswp.ui.registerElement({
                     name: 'qrcode',
                     ariaLabel: 'qrcode',
                     order: orderNumber.shift(),
                     isButton: true,
                     html: '<i class="' + config.icons.qr + '"></i>',
                     // eslint-disable-next-line no-unused-vars
+                    onInit: (el, pswp) => {
+                        photoboothTools.modal.empty('#qrPswp');
+                    },
+                    // eslint-disable-next-line no-unused-vars
                     onClick: (event, el, pswp) => {
                         const image = pswp.currSlide.data.src.split('\\').pop().split('/').pop();
-                        photoBooth.showQrCode(image);
+                        photoBooth.showQr('#qrPswp', image);
+                        photoboothTools.modal.toggle('#qrPswp');
                     }
                 });
             }
@@ -193,7 +214,7 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                     onInit: (el, pswp) => {
                         pswp.on('change', () => {
                             el.href =
-                                config.foldersPublic.api +
+                                config.foldersJS.api +
                                 '/download.php?image=' +
                                 pswp.currSlide.data.src.split('\\').pop().split('/').pop();
                         });
@@ -212,7 +233,7 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                     onInit: (el, pswp) => {
                         pswp.on('change', () => {
                             el.href =
-                                config.foldersPublic.chroma +
+                                config.foldersJS.chroma +
                                 '/chromakeying.php?filename=' +
                                 pswp.currSlide.data.src.split('\\').pop().split('/').pop();
                         });
@@ -253,7 +274,9 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                         const really = config.delete.no_request ? true : confirm(img + ' ' + msg);
                         if (really) {
                             photoBooth.deleteImage(img, () => {
-                                setTimeout(() => photoboothTools.reloadPage(), config.ui.notification_timeout * 1000);
+                                setTimeout(() => {
+                                    photoboothTools.reloadPage();
+                                }, config.ui.notification_timeout * 1000);
                             });
                         }
                     }
@@ -262,6 +285,10 @@ function initPhotoSwipeFromDOM(gallerySelector) {
         });
 
         gallery.on('afterInit', () => {
+            // photoswipe fully initialized and opening transition is running (if available)
+            if (config.qr.enabled) {
+                $('#qrPswp').html('<div class="modal__body shape--' + config.ui.style + '"></div>');
+            }
             $('.pswp__button').addClass('rotaryfocus');
             if (!config.no_request) {
                 $('.pswp__button--delete').removeClass('rotaryfocus');

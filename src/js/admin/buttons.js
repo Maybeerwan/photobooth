@@ -29,54 +29,6 @@ $(function () {
         }
     });
 
-    $('#test-connection').on('click', function (e) {
-        e.preventDefault();
-        const elem = $(this);
-
-        // show loader
-        $('.pageLoader').addClass('isActive');
-        $('.pageLoader').find('label').html(photoboothTools.getTranslation('checking'));
-
-        $.ajax({
-            url: '../api/testFtpConnection.php',
-            dataType: 'json',
-            data: $('form').serialize(),
-            type: 'post',
-            success: (resp) => {
-                photoboothTools.console.log('resp', resp);
-
-                resp.missing.forEach((el) => {
-                    photoboothTools.console.log(el);
-                    $('#ftp\\:' + el).addClass('required');
-                });
-                alert(photoboothTools.getTranslation(resp.message));
-            },
-
-            error: (jqXHR) => {
-                photoboothTools.console.log('Error checking FTP connection: ', jqXHR.responseText);
-            },
-
-            complete: (jqXHR, textStatus) => {
-                const status = jqXHR.status;
-                let classes = 'isActive isSuccess';
-                let findClasses = '.success span';
-                if (status != 200 || jqXHR.responseJSON.response != 'success' || textStatus != 'success') {
-                    classes = 'isActive isError';
-                    findClasses = '.error span';
-                }
-
-                $('.pageLoader').removeClass('isActive');
-                $('.adminToast').addClass(classes);
-                const msg = elem.find(findClasses).html();
-                $('.adminToast').find('.headline').html(msg);
-
-                setTimeout(function () {
-                    $('.adminToast').removeClass('isActive');
-                }, 2000);
-            }
-        });
-    });
-
     $('#save-admin-btn').on('click', function (e) {
         e.preventDefault();
         const data = 'type=config&' + $('form').serialize();
@@ -103,7 +55,7 @@ $(function () {
 
     $('#diskusage-btn').on('click', function (e) {
         e.preventDefault();
-        location.assign('../admin/diskusage');
+        location.assign('/admin/diskusage/');
 
         return false;
     });
@@ -146,13 +98,13 @@ $(function () {
             success: (data) => {
                 $('#checkVersion').empty();
                 photoboothTools.console.log('data', data);
-                if (!data.updateAvailable) {
+                if (!data.update_available) {
                     $('#current_version_text').text(photoboothTools.getTranslation('using_latest_version'));
-                } else if (/^\d+\.\d+\.\d+$/u.test(data.availableVersion)) {
+                } else if (/^\d+\.\d+\.\d+$/u.test(data.available_version)) {
                     $('#current_version_text').text(photoboothTools.getTranslation('current_version'));
-                    $('#current_version').text(data.currentVersion);
+                    $('#current_version').text(data.current_version);
                     $('#available_version_text').text(photoboothTools.getTranslation('available_version'));
-                    $('#available_version').text(data.availableVersion);
+                    $('#available_version').text(data.available_version);
                 } else {
                     $('#current_version_text').text(photoboothTools.getTranslation('test_update_available'));
                 }
@@ -216,7 +168,7 @@ $(function () {
 
     $('#debugpanel-btn').on('click', function (ev) {
         ev.preventDefault();
-        window.open('../admin/debug');
+        window.open('/admin/debug');
 
         return false;
     });
@@ -224,13 +176,6 @@ $(function () {
     $('#translate-btn').on('click', function (ev) {
         ev.preventDefault();
         window.open('https://crowdin.com/project/photobooth');
-
-        return false;
-    });
-
-    $('#imagesupload-btn').on('click', function (ev) {
-        ev.preventDefault();
-        window.open('../admin/upload');
 
         return false;
     });

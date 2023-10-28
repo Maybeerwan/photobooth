@@ -39,18 +39,13 @@ const photoboothPreview = (function () {
             wrapper.css('background-color', 'transparent');
         } else {
             wrapper.css('background-color', config.colors.panel);
-            loader.css('--stage-background', 'transparent');
+            loader.css('background-color', 'transparent');
             video.css('z-index', 99);
         }
         video.show();
     };
 
-    api.initializeMedia = function (
-        cb = () => {
-            return;
-        },
-        retry = 0
-    ) {
+    api.initializeMedia = function (cb = () => {}, retry = 0) {
         photoboothTools.console.logDev('Preview: Trying to initialize media...');
         if (
             !navigator.mediaDevices ||
@@ -206,7 +201,8 @@ const photoboothPreview = (function () {
 
     api.stopVideo = function () {
         wrapper.css('background-color', config.colors.panel);
-        loader.css('--stage-background', null);
+        loader.css('background', config.colors.panel);
+        loader.css('background-color', config.colors.panel);
         if (api.stream) {
             api.stream.getTracks()[0].stop();
             api.stream = null;
@@ -218,7 +214,7 @@ const photoboothPreview = (function () {
 
     api.setElements = function (
         videoSelector = '#video--view',
-        loaderSelector = '.stage[data-stage="loader"]',
+        loaderSelector = '#loader',
         wrapperSelector = '#wrapper',
         urlSelector = '#ipcam--view',
         pictureFrameSelector = '#picture--frame',

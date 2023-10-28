@@ -28,7 +28,7 @@ CHROME_FLAGS=false
 CHROME_DEFAULT_FLAGS="--noerrdialogs --disable-infobars --disable-features=Translate --no-first-run --check-for-update-interval=31536000 --touch-events=enabled --password-store=basic"
 AUTOSTART_FILE=""
 DESKTOP_OS=true
-PHP_VERSION="8.2"
+PHP_VERSION="7.4"
 
 # Update
 RUN_UPDATE=false
@@ -39,6 +39,8 @@ PHOTOBOOTH_PATH=(
         '/var/www/html/photobooth'
 )
 PHOTOBOOTH_SUBMODULES=(
+        'vendor/PHPMailer'
+        'vendor/phpqrcode'
         'vendor/rpihotspot'
         'vendor/Seriously'
 )
@@ -47,41 +49,31 @@ PHOTOBOOTH_SUBMODULES=(
 NEEDS_NODEJS_CHECK=true
 NODEJS_NEEDS_UPDATE=false
 NODEJS_CHECKED=false
-NODEJS_MAJOR="18"
-NODEJS_MINOR="17"
+NODEJS_MAJOR="16"
+NODEJS_MINOR="20"
 NODEJS_MICRO="0"
 NEEDED_NODE_VERSION="v$NODEJS_MAJOR.$NODEJS_MINOR(.$NODEJS_MICRO or newer)"
-NEEDS_NPM_CHECK=true
-NPM_NEEDS_UPDATE=false
-NPM_CHECKED=false
 
 COMMON_PACKAGES=(
+        'ffmpeg'
         'gphoto2'
         'libimage-exiftool-perl'
         'nodejs'
         'php-gd'
-        'php-xml'
         'php-zip'
-        'php-mbstring'
         'python3'
+        'python3-gphoto2'
+        'python3-psutil'
+        'python3-zmq'
         'rsync'
         'udisks2'
+        'v4l2loopback-dkms'
+        'v4l-utils'
 )
 
-EXTRA_PACKAGES=(
-        'curl'
-        'gcc'
-        'g++'
-        'make'
-)
+EXTRA_PACKAGES=('curl')
 
 INSTALL_PACKAGES=()
-
-DEBIAN=(
-        'buster'
-        'bullseye'
-        'bookworm'
-)
 
 function info {
     echo -e "\033[0;36m${1}\033[0m"
@@ -221,7 +213,6 @@ do
                 BRANCH="stable4"
                 GIT_INSTALL=false
                 NEEDS_NODEJS_CHECK=false
-                NEEDS_NPM_CHECK=false
             else
                 BRANCH="dev"
                 GIT_INSTALL=true
@@ -294,33 +285,24 @@ check_nodejs() {
     minor=${VER[1]}
     micro=${VER[2]}
 
-    info "[Info]      Node.js on Photobooth is only supported on v$NODEJS_MAJOR.$NODEJS_MINOR!"
-    info "[Info]      Found Node.js $NODE_VERSION".
+    info "[Info]      Node.js is only supported on v14 and v16!"
 
-    if [[ -n "$major" && "$major" -ge "$NODEJS_MAJOR" ]]; then
-        if [[ -n "$major" && "$major" -ge "19" ]]; then
+    if [[ -n "$major" && "$major" -ge "14" ]]; then
+        if [[ -n "$major" && "$major" -ge "18" ]]; then
             info "[Info]      Node.js downgrade suggested."
             if [ "$NODEJS_CHECKED" = true ]; then
-                warn "[WARN]      Downgrade of Node.js was not possible or skipped."
+                error "[ERROR]     Downgrade was not possible. Aborting Photobooth installation!"
+                exit 1
             else
                 update_nodejs
             fi
         else
-            if [[ "$major" -eq "$NODEJS_MAJOR" && "$minor" -lt "$NODEJS_MINOR" ]]; then
-                if [ "$NODEJS_CHECKED" = true ]; then
-                    error "[ERROR]     Update of Node.js was not possible. Aborting Photobooth installation!"
-                    exit 1
-                else
-                    warn "[WARN]      Node.js needs to be updated."
-                    update_nodejs
-                fi 
-            else
-                info "[Info]      Node.js matches our requirements.".
-            fi
+            info "[Info]      Found Node.js $NODE_VERSION".
         fi
+
     elif [[ -n "$major" ]]; then
         if [ "$NODEJS_CHECKED" = true ]; then
-            error "[ERROR]     Update of Node.js was not possible. Aborting Photobooth installation!"
+            error "[ERROR]     Update was not possible. Aborting Photobooth installation!"
             exit 1
         else
             update_nodejs
@@ -334,92 +316,43 @@ check_nodejs() {
 update_nodejs() {
     echo -e "\033[0;33m### Node.js should be updated/downgraded. Node.js version not matching our requirements"
     echo -e "###  Found Node.js $NODE_VERSION, but $NEEDED_NODE_VERSION is suggested."
-    echo -e "###  NOTE: Currently Node.js on Photobooth is only supported on v$NODEJS_MAJOR.$NODEJS_MINOR."
-    echo -e "###        The installation of Photobooth will fail on Node.js versions below v$NODEJS_MAJOR.$NODEJS_MINOR."
+    echo -e "###  NOTE: Currently Node.js is only supported on v14 and v16."
+    echo -e "###        The installation of Photobooth will fail on Node.js versions below v14."
     ask_yes_no "### Would you like to update/downgrade Node.js to $NEEDED_NODE_VERSION ? [y/N] " "Y"
     echo -e "\033[0m"
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         if [ $(dpkg-query -W -f='${Status}' "nodejs" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
             info "[Cleanup]   Removing nodejs package"
-            apt-get -qq purge -y nodejs
-            apt-get -qq autoremove --purge -y
+            apt purge -y nodejs
         fi
 
         if [ $(dpkg-query -W -f='${Status}' "nodejs-doc" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
             info "[Cleanup]   Removing nodejs-doc package"
-            apt-get -qq purge -y nodejs-doc
+            apt purge -y nodejs-doc
         fi
 
-        if [ $(dpkg-query -W -f='${Status}' "libnode72" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
-            info "[Cleanup]   Removing libnode72 package"
-            apt-get -qq purge -y libnode72
+        if [ "$RUNNING_ON_PI" = true ]; then
+            info "[Package]   Installing Node.js v$NODEJS_MAJOR.$NODEJS_MINOR.$NODEJS_MICRO"
+            wget -O - https://raw.githubusercontent.com/audstanley/NodeJs-Raspberry-Pi/master/Install-Node.sh | bash
+            node-install -v $NODEJS_MAJOR.$NODEJS_MINOR.$NODEJS_MICRO
+            NODEJS_CHECKED=true
+            check_nodejs
+        else
+            info "[Package]   Installing latest Node.js v16"
+            curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+            apt-get install -y nodejs
+            NODEJS_CHECKED=true
+            check_nodejs
         fi
-
-        info "[Package]   Installing latest Node.js v18"
-        apt-get -qq install -y ca-certificates curl gnupg
-        mkdir -p /etc/apt/keyrings
-        curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-        echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-        apt-get -qq update
-        apt-get -qq install -y nodejs
-        NODEJS_CHECKED=true
-        check_nodejs
     else
         info "### We won't update Node.js."
-        NODEJS_CHECKED=true
-        check_nodejs
     fi
-}
-
-proof_npm() {
-    npm_version=$(npm -v)
-    major=$(echo "$npm_version" | cut -d. -f1)
-    minor=$(echo "$npm_version" | cut -d. -f2)
-    patch=$(echo "$npm_version" | cut -d. -f3)
-    info "[Info]      Found npm $npm_version"
-    if [ "$major" -gt 9 ] || [ "$major" -eq 9 -a "$minor" -ge 6 ]; then
-        info "[Info]      npm version matches our requirements."
-        NPM_CHECKED=true
-    else
-        if [ "$NPM_CHECKED" = true ]; then
-            error "[ERROR]     Update of npm was not possible. Aborting Photobooth installation!"
-            exit 1
-        else
-            warn "[WARN]      npm needs to be updated!"
-            npm install npm@latest -g
-            NPM_CHECKED=true
-            check_npm
-        fi 
-    fi
-}
-
-check_npm() {
-    if command -v npm &> /dev/null; then
-        info "[Info]      npm available.".
-    else
-        info "[Info]      npm not installed. Trying to install...".
-        apt-get -qq install -y npm
-    fi
-    proof_npm
 }
 
 common_software() {
     info "### First we update your system. That's not worth mentioning."
-    apt-get -qq update
-    if [[ ${PHP_VERSION} == "8.2" ]]; then
-        apt-get -qq install apt-transport-https lsb-release ca-certificates software-properties-common -y
-        OS=$(lsb_release -sc);
-        if [[ "${DEBIAN[@]}" =~ "${OS}" ]]; then
-            wget -qO /etc/apt/trusted.gpg.d/php.gpg https://packages.sury.org/php/apt.gpg
-            echo "deb https://packages.sury.org/php/ $(lsb_release -sc) main" | tee /etc/apt/sources.list.d/php.list
-        else
-            if [[ "${OS}" == "jammy" ]]; then
-                echo "deb http://archive.ubuntu.com/ubuntu/ jammy-updates main restricted" >> /etc/apt/sources.lst
-            fi
-            add-apt-repository ppa:ondrej/php -y
-        fi
-    fi
-    apt-get -qq update
+    apt update
+    apt upgrade -y
 
     if [ "$RUN_UPDATE" = false ]; then
         info "### Photobooth needs some software to run."
@@ -435,6 +368,7 @@ common_software() {
     if [ $GIT_INSTALL = true ]; then
         EXTRA_PACKAGES+=(
             'git'
+            'yarn'
         )
     else
         EXTRA_PACKAGES+=(
@@ -445,17 +379,6 @@ common_software() {
     # Note: raspberrypi-kernel-header are needed before v4l2loopback-dkms
     if [ "$RUNNING_ON_PI" = true ]; then
         EXTRA_PACKAGES+=('raspberrypi-kernel-headers')
-    fi
-
-    if [ "$GPHOTO_PREVIEW" = true ]; then
-        EXTRA_PACKAGES+=(
-            'ffmpeg'
-            'python3-gphoto2'
-            'python3-psutil'
-            'python3-zmq'
-            'v4l2loopback-dkms'
-            'v4l-utils'
-        )
     fi
 
     # Additional packages
@@ -474,16 +397,21 @@ common_software() {
             info "[Package]   ${package} installed already"
         else
             info "[Package]   Installing missing common package: ${package}"
+            if [[ ${package} == "yarn" ]]; then
+                curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+                echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+                apt update
+            fi
             if [[ ${package} == "gphoto2" ]]; then
-                info "            Installing latest development version."
+                info "            Installing latest stable release."
                 wget https://raw.githubusercontent.com/gonzalo/gphoto2-updater/master/gphoto2-updater.sh
                 wget https://raw.githubusercontent.com/gonzalo/gphoto2-updater/master/.env
                 chmod +x gphoto2-updater.sh
-                ./gphoto2-updater.sh --development
+                ./gphoto2-updater.sh --stable
                 rm gphoto2-updater.sh
                 rm .env
             else
-                apt-get -qq install -y ${package}
+                apt install -y ${package}
             fi
         fi
     done
@@ -491,14 +419,11 @@ common_software() {
     if [ "$NEEDS_NODEJS_CHECK" = true ]; then
         check_nodejs
     fi
-    if [ "$NEEDS_NPM_CHECK" = true ]; then
-        check_npm
-    fi
 }
 
 apache_webserver() {
     info "### Installing Apache Webserver..."
-    apt-get -qq install -y apache2 libapache2-mod-php
+    apt install -y apache2 libapache2-mod-php
 }
 
 nginx_webserver() {
@@ -506,7 +431,7 @@ nginx_webserver() {
     nginx_conf="/etc/nginx/nginx.conf"
 
     info "### Installing NGINX Webserver..."
-    apt-get -qq install -y nginx php${PHP_VERSION} php${PHP_VERSION}-fpm
+    apt install -y nginx php${PHP_VERSION} php${PHP_VERSION}-fpm
 
     if [ -f "${nginx_site_conf}" ]; then
         info "### Enable PHP in NGINX"
@@ -530,14 +455,14 @@ nginx_webserver() {
     else
         error "Can not find ${nginx_conf} !"
         info "Using Apache Webserver !"
-        apt-get -qq remove -y nginx php${PHP_VERSION}-fpm
+        apt remove -y nginx php${PHP_VERSION}-fpm
         apache_webserver
     fi
 }
 
 lighttpd_webserver() {
     info "### Installing Lighttpd Webserver..."
-    apt-get -qq install -y lighttpd php${PHP_VERSION}-fpm
+    apt install -y lighttpd php${PHP_VERSION}-fpm
     lighttpd-enable-mod fastcgi
     lighttpd-enable-mod fastcgi-php
 
@@ -568,7 +493,7 @@ EOF
     else
         error "Can not find ${php_conf} !"
         info "Using Apache Webserver !"
-        apt-get -qq remove -y lighttpd php${PHP_VERSION}-fpm
+        apt remove -y lighttpd php${PHP_VERSION}-fpm
         apache_webserver
     fi
 }
@@ -594,31 +519,27 @@ general_setup() {
         info "$INSTALLFOLDERPATH not found."
     fi
 
-    mkdir -p "$INSTALLFOLDERPATH"
-    chown www-data:www-data "$INSTALLFOLDERPATH"
-    chown root:www-data /var/www
-
     PHOTOBOOTH_LOG="$INSTALLFOLDERPATH/private/install.log"
 }
 
 add_git_remote() {
     cd $INSTALLFOLDERPATH/
     info "### Checking needed remote information..."
-    if sudo -u www-data git config remote.photoboothproject.url > /dev/null; then
+    if git config remote.photoboothproject.url > /dev/null; then
         info "### photoboothproject remote exist already"
-        if sudo -u www-data git config remote.origin.url == "git@github.com:andi34/photobooth" || sudo -u www-data git config remote.origin.url == "https://github.com/andi34/photobooth.git"; then
+        if git config remote.origin.url == "git@github.com:andi34/photobooth" || git config remote.origin.url == "https://github.com/andi34/photobooth.git"; then
             info "origin remote is andi34"
         fi
     else
         info "### Adding photoboothproject remote..."
-        sudo -u www-data git remote add photoboothproject https://github.com/PhotoboothProject/photobooth.git
+        git remote add photoboothproject https://github.com/Maybeerwan/photobooth.git
     fi
 }
 
 check_git_install() {
     cd $INSTALLFOLDERPATH
     info "### Checking for git Installation"
-    if [ "$(sudo -u www-data git rev-parse --is-inside-work-tree)" = true ]; then
+    if [ "$(git rev-parse --is-inside-work-tree)" = true ]; then
         info "### Photobooth installed via git."
         GIT_INSTALL=true
         add_git_remote
@@ -631,62 +552,52 @@ start_git_install() {
     cd $INSTALLFOLDERPATH
     info "### We are installing/updating Photobooth via git."
     info "### Ignoring filemode changes on git."
-    sudo -u www-data git config core.fileMode false
-    sudo -u www-data git fetch photoboothproject $BRANCH
-    sudo -u www-data git checkout photoboothproject/$BRANCH
+    git config core.fileMode false
+    git fetch photoboothproject $BRANCH
+    git checkout photoboothproject/$BRANCH
 
-    sudo -u www-data git submodule update --init
+    git submodule update --init
 
     if [ -f "0001-backup-changes.patch" ]; then
         info "### Trying to apply your local changes again..."
-        sudo -u www-data git am --whitespace=nowarn "0001-backup-changes.patch" && PATCH_SUCCESS=true || PATCH_SUCCESS=false
+        git am --whitespace=nowarn "0001-backup-changes.patch" && PATCH_SUCCESS=true || PATCH_SUCCESS=false
         if [ "$PATCH_SUCCESS" = true ]; then
             info "### Changes applied successfully!"
-            sudo -u www-data git reset --soft HEAD^
+            git reset --soft HEAD^
         else
             error "ERROR: can not apply your local changes automatically!"
-            sudo -u www-data git am --abort
+            git am --abort
         fi
 
-        sudo -u www-data mv 0001-backup-changes.patch $INSTALLFOLDERPATH/private/$DATE-backup-changes.patch
+        mv 0001-backup-changes.patch $INSTALLFOLDERPATH/private/$DATE-backup-changes.patch
     fi
 
     info "### Get yourself a hot beverage. The following step can take up to 15 minutes."
-    mkdir -p /var/www/.npm
-    chown www-data:www-data /var/www/.npm
-    mkdir -p /var/www/.cache
-    chown www-data:www-data /var/www/.cache
-    sudo -u www-data npm install
-    sudo -u www-data npm run build
+    yarn install
+    yarn build
 }
 
 start_install() {
     info "### Now we are going to install Photobooth."
     if [ $GIT_INSTALL = true ]; then
-        sudo -u www-data git clone https://github.com/PhotoboothProject/photobooth $INSTALLFOLDER
+        git clone https://github.com/Maybeerwan/photobooth $INSTALLFOLDER
         cd $INSTALLFOLDERPATH
         add_git_remote
         start_git_install
     else
         info "### We are downloading the latest release and extracting it to $INSTALLFOLDERPATH."
-        sudo -u www-data curl -s https://api.github.com/repos/PhotoboothProject/photobooth/releases/latest |
+        curl -s https://api.github.com/repos/Maybeerwan/photobooth/releases/latest |
             jq '.assets[].browser_download_url | select(endswith(".tar.gz"))' |
             xargs curl -L --output /tmp/photobooth-latest.tar.gz
 
-        sudo -u www-data mkdir -p $INSTALLFOLDERPATH
-        sudo -u www-data tar -xzvf /tmp/photobooth-latest.tar.gz -C $INSTALLFOLDERPATH
+        mkdir -p $INSTALLFOLDERPATH
+        tar -xzvf /tmp/photobooth-latest.tar.gz -C $INSTALLFOLDERPATH
         cd $INSTALLFOLDERPATH
     fi
 }
 
 detect_browser() {
-    if [ $(dpkg-query -W -f='${Status}' "firefox" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
-        WEBBROWSER="firefox"
-        CHROME_FLAGS=false
-    elif [ $(dpkg-query -W -f='${Status}' "firefox-esr" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
-        WEBBROWSER="firefox-esr"
-        CHROME_FLAGS=false
-    elif [ $(dpkg-query -W -f='${Status}' "chromium-browser" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
+    if [ $(dpkg-query -W -f='${Status}' "chromium-browser" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
         WEBBROWSER="chromium-browser"
         CHROME_FLAGS=true
     elif [ $(dpkg-query -W -f='${Status}' "chromium" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
@@ -701,6 +612,9 @@ detect_browser() {
     elif [ $(dpkg-query -W -f='${Status}' "google-chrome-beta" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
         WEBBROWSER="google-chrome-beta"
         CHROME_FLAGS=true
+    elif [ $(dpkg-query -W -f='${Status}' "firefox" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
+        WEBBROWSER="firefox"
+        CHROME_FLAGS=false
     else
         WEBBROWSER="unknown"
         CHROME_FLAGS=false
@@ -843,13 +757,17 @@ general_permissions() {
     gpasswd -a www-data video
     gpasswd -a $USERNAME www-data
 
+    touch "/var/www/.yarnrc"
+    info "### Fixing permissions on .yarnrc"
+    chown www-data:www-data "/var/www/.yarnrc"
+
     info "### Fixing permissions on cache folder."
     mkdir -p "/var/www/.cache"
     chown -R www-data:www-data "/var/www/.cache"
 
-    info "### Fixing permissions on npm folder."
-    mkdir -p "/var/www/.npm"
-    chown -R www-data:www-data "/var/www/.npm"
+    info "### Fixing permissions on yarn folder."
+    mkdir -p "/var/www/.yarn"
+    chown -R www-data:www-data "/var/www/.yarn"
 
     info "### Disabling camera automount."
     chmod -x /usr/lib/gvfs/gvfs-gphoto2-volume-monitor || true
@@ -909,8 +827,8 @@ cups_setup() {
 
 gphoto_preview() {
     if [ -d "/etc/systemd/system" ] && [ -d "/usr" ]; then
-        wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/gphoto/ffmpeg-webcam.service -O "/etc/systemd/system/ffmpeg-webcam.service"
-        wget https://raw.githubusercontent.com/PhotoboothProject/photobooth/dev/gphoto/ffmpeg-webcam.sh -O "/usr/ffmpeg-webcam.sh"
+        wget https://raw.githubusercontent.com/Maybeerwan/photobooth/dev/gphoto/ffmpeg-webcam.service -O "/etc/systemd/system/ffmpeg-webcam.service"
+        wget https://raw.githubusercontent.com/Maybeerwan/photobooth/dev/gphoto/ffmpeg-webcam.sh -O "/usr/ffmpeg-webcam.sh"
         chmod +x "/usr/ffmpeg-webcam.sh"
         systemctl start ffmpeg-webcam.service
         systemctl enable ffmpeg-webcam.service
@@ -1039,9 +957,9 @@ if [ "$FORCE_RASPBERRY_PI" = false ]; then
 fi
 
 info "### Checking internet connection..."
-if [ $(dpkg-query -W -f='${Status}' "wget" 2>/dev/null | grep -c "ok installed") -eq 1 ];
-then
-    wget -q --tries=10 --timeout=20 -O - http://google.com > /dev/null
+if [ $(dpkg-query -W -f='${Status}' "iputils-ping" 2>/dev/null | grep -c "ok installed") -eq 1 ]; then
+    ping -c 1 -q google.com >&/dev/null
+
     if [ $? -eq 0 ]; then
         info "    connected!"
     else
@@ -1050,7 +968,7 @@ then
         exit 1
     fi
 else
-    warn "Can not check Internet connection, wget missing!"
+    warn "Can not check Internet connection, iputils-ping missing!"
 fi
 
 ############################################################
@@ -1314,3 +1232,4 @@ then
     info "### Your device will reboot now."
     shutdown -r now
 fi
+

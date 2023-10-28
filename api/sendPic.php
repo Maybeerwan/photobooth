@@ -1,54 +1,64 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\DataLogger;
-use Photobooth\DatabaseManager;
-use PHPMailer\PHPMailer\PHPMailer;
-
 header('Content-Type: application/json');
 
-$logger = new DataLogger(PHOTOBOOTH_LOG);
-$logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
+use PHPMailer\PHPMailer\PHPMailer;
 
-if (empty($_POST['recipient']) || !PHPMailer::validateAddress($_POST['recipient'])) {
-    $data = [
+require '../vendor/PHPMailer/src/Exception.php';
+require '../vendor/PHPMailer/src/PHPMailer.php';
+require '../vendor/PHPMailer/src/SMTP.php';
+
+require_once '../lib/config.php';
+require_once '../lib/db.php';
+require_once '../lib/log.php';
+
+$Logger = new DataLogger(PHOTOBOOTH_LOG);
+$Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
+
+if (empty($_POST['sendTo']) || !PHPMailer::validateAddress($_POST['sendTo'])) {
+    $LogData = [
         'success' => false,
         'error' => 'E-Mail address invalid',
     ];
     if ($config['dev']['loglevel'] > 0) {
-        $logger->addLogData($data);
-        $logger->logToFile();
+        $Logger->addLogData($LogData);
+        $Logger->logToFile();
     }
-    echo json_encode($data);
-    exit();
+    $LogString = json_encode($LogData);
+    die($LogString);
 }
 
-if ($config['mail']['send_all_later']) {
+if (isset($_POST['send-link']) && $_POST['send-link'] === 'yes') {
     if (!file_exists(MAIL_FILE)) {
         $addresses = [];
     } else {
         $addresses = json_decode(file_get_contents(MAIL_FILE));
     }
-    if (!in_array($_POST['recipient'], $addresses)) {
-        $addresses[] = $_POST['recipient'];
+
+    if (!in_array($_POST['sendTo'], $addresses)) {
+        $addresses[] = $_POST['sendTo'];
     }
+
     file_put_contents(MAIL_FILE, json_encode($addresses));
-    echo json_encode(['success' => true, 'saved' => true ]);
-    exit();
+
+    die(
+        json_encode([
+            'success' => true,
+            'saved' => true,
+        ])
+    );
 }
 
 if (empty($_POST['image'])) {
-    $data = [
+    $LogData = [
         'success' => false,
         'error' => 'Image not defined',
     ];
     if ($config['dev']['loglevel'] > 0) {
-        $logger->addLogData($data);
-        $logger->logToFile();
+        $Logger->addLogData($LogData);
+        $Logger->logToFile();
     }
-    echo json_encode($data);
-    exit();
+    $LogString = json_encode($LogData);
+    die($LogString);
 }
 
 $postImage = basename($_POST['image']);
@@ -56,20 +66,21 @@ $database = new DatabaseManager();
 $database->db_file = DB_FILE;
 $database->file_dir = IMG_DIR;
 if (!$database->isInDB($postImage)) {
-    $data = [
+    $LogData = [
         'success' => false,
         'error' => 'Image not found in database',
     ];
     if ($config['dev']['loglevel'] > 0) {
-        $logger->addLogData($data);
-        $logger->logToFile();
+        $Logger->addLogData($LogData);
+        $Logger->logToFile();
     }
-    echo json_encode($data);
-    exit();
+    $LogString = json_encode($LogData);
+    die($LogString);
 }
 
 $mail = new PHPMailer();
 $mail->setLanguage($config['ui']['language'], '../vendor/PHPMailer/language/');
+
 $mail->isSMTP();
 $mail->Host = $config['mail']['host'];
 $mail->SMTPAuth = true;
@@ -80,17 +91,17 @@ $mail->SMTPSecure = $config['mail']['secure'];
 $mail->Port = $config['mail']['port'];
 $mail->setFrom($config['mail']['fromAddress'], $config['mail']['fromName']);
 
-if (!$mail->addAddress($_POST['recipient'])) {
-    $data = [
+if (!$mail->addAddress($_POST['sendTo'])) {
+    $LogData = [
         'success' => false,
         'error' => 'E-Mail address not valid / error',
     ];
     if ($config['dev']['loglevel'] > 0) {
-        $logger->addLogData($data);
-        $logger->logToFile();
+        $Logger->addLogData($LogData);
+        $Logger->logToFile();
     }
-    echo json_encode($data);
-    exit();
+    $LogString = json_encode($LogData);
+    die($LogString);
 }
 
 // Email subject
@@ -113,30 +124,34 @@ if ($config['mail']['is_html']) {
 $path = $config['foldersAbs']['images'] . DIRECTORY_SEPARATOR;
 
 if (!$mail->addAttachment($path . $postImage)) {
-    $data = [
+    $LogData = [
         'success' => false,
         'error' => 'File error:' . $path . $postImage,
     ];
     if ($config['dev']['loglevel'] > 0) {
-        $logger->addLogData($data);
-        $logger->logToFile();
+        $Logger->addLogData($LogData);
+        $Logger->logToFile();
     }
-    echo json_encode($data);
-    exit();
+    $LogString = json_encode($LogData);
+    die($LogString);
 }
 
 if ($mail->send()) {
-    echo json_encode(['success' => true]);
-    exit();
+    die(
+        json_encode([
+            'success' => true,
+        ])
+    );
 }
 
-$data = [
+$LogData = [
     'success' => false,
     'error' => $mail->ErrorInfo,
 ];
 if ($config['dev']['loglevel'] > 0) {
-    $logger->addLogData($data);
-    $logger->logToFile();
+    $Logger->addLogData($LogData);
+    $Logger->logToFile();
 }
-echo json_encode($data);
+$LogString = json_encode($LogData);
+echo $LogString;
 exit();

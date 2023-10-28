@@ -1,60 +1,10 @@
-/* globals remoteBuzzerClient */
+/* globals i18n remoteBuzzerClient */
 const photoboothTools = (function () {
     // vars
     const notificationTimeout = config.ui.notification_timeout * 1000,
         api = {};
 
-    api.translations = null;
     api.isPrinting = false;
-
-    api.initialize = async function () {
-        const result = await fetch(
-            config.photobooth.basePath + 'api/translations.php',
-            {
-                cache: 'no-store'
-            }
-        );
-        this.translations = await result.json();
-        this.registerEvents();
-    };
-
-    api.registerEvents = () => {
-
-        document.querySelectorAll('[data-command]').forEach((button) => {
-            button.addEventListener('click', (event) => {
-                const target = event.currentTarget;
-                const data = target.dataset;
-
-                // Check if command is in list of supported events
-                // This can be dropped after all actions are migrated
-                if (!['remotebuzzer', 'reload'].includes(data.command)) {
-                    return;
-                }
-
-                event.preventDefault();
-                event.stopImmediatePropagation();
-
-                const name = 'photobooth.' + data.command;
-                const detail = {
-                    trigger: target,
-                    data: Object.assign({}, data)
-                };
-
-                api.console.log('dispatch: ' + name);
-                const customEvent = new CustomEvent(name , { detail: detail });
-                document.dispatchEvent(customEvent);
-            });
-        });
-
-        document.addEventListener('photobooth.remotebuzzer', (event) => {
-            api.getRequest(window.location.protocol + '//' + config.remotebuzzer.serverip + ':' + config.remotebuzzer.port + '/commands/' + event.detail.data.action);
-        });
-
-        document.addEventListener('photobooth.reload', () => {
-            api.reloadPage();
-        });
-
-    };
 
     api.console = {
         log: function (...content) {
@@ -68,101 +18,59 @@ const photoboothTools = (function () {
     };
 
     api.getTranslation = function (key) {
-        if (!this.translations[key]) {
-            this.console.logDev('translation key not found: ' + key);
-
-            return key;
+        const translation = i18n(key, config.ui.language);
+        const fallbackTranslation = i18n(key, 'en');
+        if (translation) {
+            return translation;
+        } else if (fallbackTranslation) {
+            return fallbackTranslation;
         }
 
-        return this.translations[key];
-    };
-
-    api.overlay = {
-        element: null,
-        show: (message, type = 'default') => {
-            if (api.overlay.element === null) {
-                const element = document.createElement('div');
-                element.classList.add('overlay');
-                document.body.append(element);
-                api.overlay.element = element;
-            }
-            api.overlay.element.innerHTML = message;
-            api.overlay.element.dataset.type = type;
-        },
-        showSuccess: (message) => {
-            api.overlay.show(message, 'success');
-        },
-        showWarning: (message) => {
-            api.overlay.show(message, 'warning');
-        },
-        showError: (message) => {
-            api.overlay.show(message, 'error');
-        },
-        close: () => {
-            if (api.overlay.element !== null) {
-                api.overlay.element.remove();
-                api.overlay.element = null;
-            }
-        }
-    };
-
-    api.button = {
-        create: (label, iconClass, severity = 'default', prefix = '') => {
-
-            const button = document.createElement('button');
-            button.classList.add(prefix + 'button');
-            button.classList.add('rotaryfocus');
-            button.dataset.severity = severity;
-
-            const iconWrap = document.createElement('span');
-            iconWrap.classList.add(prefix + 'button--icon');
-            const icon = document.createElement('i');
-            icon.classList = iconClass;
-            iconWrap.appendChild(icon);
-            button.appendChild(iconWrap);
-
-            const labelWrap = document.createElement('span');
-            labelWrap.classList.add(prefix + 'button--label');
-            labelWrap.innerHTML = api.getTranslation(label);
-            button.appendChild(labelWrap);
-
-            return button;
-        }
+        return key;
     };
 
     api.modal = {
-        element: null,
-        open: (type = 'default') => {
-            if (api.modal.element === null) {
-                const element = document.createElement('div');
-                element.dataset.type = type;
-                element.classList.add('modal');
-                element.classList.add('rotarygroup');
-
-                const inner = document.createElement('div');
-                inner.classList.add('modal-inner');
-                element.appendChild(inner);
-
-                const body = document.createElement('div');
-                body.classList.add('modal-body');
-                inner.appendChild(body);
-
-                const buttonbar = document.createElement('div');
-                buttonbar.classList.add('modal-buttonbar');
-                const closeButton = api.button.create('close', 'fa fa-times', 'default', 'modal-');
-                closeButton.addEventListener('click', () => api.modal.close());
-                buttonbar.appendChild(closeButton);
-                inner.appendChild(buttonbar);
-
-                document.body.append(element);
-                api.modal.element = element;
-            }
+        open: function (selector) {
+            $(selector).addClass('modal--show');
         },
-        close: () => {
-            if (api.modal.element !== null) {
-                api.modal.element.remove();
-                api.modal.element = null;
+        close: function (selector) {
+            if ($(selector).hasClass('modal--show')) {
+                $(selector).removeClass('modal--show');
+
+                return true;
             }
+
+            return false;
+        },
+        toggle: function (selector) {
+            $(selector).toggleClass('modal--show');
+        },
+        empty: function (selector) {
+            api.modal.close(selector);
+
+            $(selector).find('.modal__body').empty();
+        }
+    };
+
+    api.modalMesg = {
+        showSuccess: function (selector, successMsg) {
+            $(selector).empty();
+            $(selector).html('<div class="modal__body success"><span>' + successMsg + '</span></div>');
+            api.modal.open($(selector));
+        },
+        showWarn: function (selector, warnMsg) {
+            $(selector).empty();
+            $(selector).html('<div class="modal__body warning"><span>' + warnMsg + '</span></div>');
+            api.modal.open($(selector));
+        },
+        showError: function (selector, errorMsg) {
+            $(selector).empty();
+            $(selector).html('<div class="modal__body error"><span>' + errorMsg + '</span></div>');
+            api.modal.open($(selector));
+        },
+        reset: function (selector) {
+            api.modal.close($(selector));
+            $(selector).empty();
         }
     };
 
@@ -171,27 +79,27 @@ const photoboothTools = (function () {
     };
 
     api.getRequest = function (url) {
+        const request = new XMLHttpRequest();
         api.console.log('Sending GET request to: ' + url);
-        fetch(new Request(url), {
-            method: 'GET',
-            mode: 'cors',
-            credentials: 'same-origin'
-        })
-            .then(function (response) {
-                if (response.status === 200) {
-                    return response.text();
-                } else if (response.status === 404) {
-                    throw new Error('No records found');
-                } else {
-                    throw new Error('Unhandled request status: ' + response.status);
-                }
-            })
-            .then(function (data) {
-                api.console.log(data);
-            })
-            .catch(function (error) {
-                api.console.log('Error occurred: ' + error.message);
-            });
+
+        request.onload = function () {
+            if (request.status === 200) {
+                // parse JSON data
+                const responseData = request.responseText;
+                api.console.log(responseData);
+            } else if (request.status === 404) {
+                api.console.log('No records found');
+            } else {
+                api.console.log('Unhandled request status: ' + request.status);
+            }
+        };
+
+        request.onerror = function () {
+            api.console.log('Network error occurred');
+        };
+
+        request.open('GET', url);
+        request.send();
     };
 
     api.isVideoFile = function (filename) {
@@ -207,8 +115,8 @@ const photoboothTools = (function () {
     };
 
     api.resetPrintErrorMessage = function (cb, to) {
-        setTimeout(() => {
-            api.overlay.close();
+        setTimeout(function () {
+            api.modalMesg.reset('#modal_mesg');
             cb();
             api.isPrinting = false;
         }, to);
@@ -217,19 +125,21 @@ const photoboothTools = (function () {
     api.printImage = function (imageSrc, cb) {
         if (api.isVideoFile(imageSrc)) {
             api.console.log('ERROR: An error occurred: attempt to print non printable file.');
-            api.overlay.showError(api.getTranslation('no_printing'));
-            setTimeout(() => api.overlay.close(), notificationTimeout);
+            api.modalMesg.showError('#modal_mesg', api.getTranslation('no_printing'));
+            setTimeout(function () {
+                api.modalMesg.reset('#modal_mesg');
+            }, notificationTimeout);
         } else if (api.isPrinting) {
             api.console.log('Printing in progress: ' + api.isPrinting);
         } else {
-            api.overlay.show(api.getTranslation('printing'));
+            api.modal.open('#print_mesg');
             api.isPrinting = true;
             if (typeof remoteBuzzerClient !== 'undefined') {
                 remoteBuzzerClient.inProgress('print');
             }
             $.ajax({
                 method: 'GET',
-                url: config.foldersPublic.api + '/print.php',
+                url: config.foldersJS.api + '/print.php',
                 data: {
                     filename: imageSrc
                 },
@@ -237,15 +147,20 @@ const photoboothTools = (function () {
                     api.console.log('Picture processed: ', data);
 
                     if (data.status == 'locking') {
-                        api.overlay.showWarning(config.print.locking_msg + ' (' + api.getTranslation('printed') + ' ' + data.count + ')');
+                        api.modal.close('#print_mesg');
+                        api.modalMesg.showWarn(
+                            '#modal_mesg',
+                            config.print.locking_msg + ' (' + api.getTranslation('printed') + ' ' + data.count + ')'
+                        );
                         api.resetPrintErrorMessage(cb, config.print.time);
                     } else if (data.error) {
                         api.console.log('ERROR: An error occurred: ', data.error);
-                        api.overlay.showError(data.error);
+                        api.modal.close('#print_mesg');
+                        api.modalMesg.showError('#modal_mesg', data.error);
                         api.resetPrintErrorMessage(cb, config.print.time);
                     } else {
                         setTimeout(function () {
-                            api.overlay.close();
+                            api.modal.close('#print_mesg');
                             cb();
                             api.isPrinting = false;
                         }, config.print.time);
@@ -253,26 +168,18 @@ const photoboothTools = (function () {
                 },
                 error: (jqXHR, textStatus) => {
                     api.console.log('ERROR: An error occurred: ', textStatus);
-                    api.overlay.showError(api.getTranslation('error'));
+                    api.modal.close('#print_mesg');
+                    api.modalMesg.showError('#modal_mesg', api.getTranslation('error'));
                     api.resetPrintErrorMessage(cb, notificationTimeout);
                 }
             });
         }
     };
 
-    $(document).on('keyup', function (ev) {
-        if (config.reload.key && parseInt(config.reload.key, 10) === ev.keyCode) {
-            api.reloadPage();
-        }
-    });
-
     return api;
 })();
 
 // Init on domready
 $(function () {
-    photoboothTools.initialize().then(() => {
-        photoboothTools.console.log('PhotoboothTools: initialized');
-        photoboothTools.console.log('Loglevel: ' + config.dev.loglevel);
-    });
+    photoboothTools.console.log('Loglevel: ' + config.dev.loglevel);
 });

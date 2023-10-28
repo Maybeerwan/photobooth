@@ -1,5 +1,3 @@
-const fs = require('fs');
-
 /* VARIABLES */
 let collageInProgress = false,
     triggerArmed = true,
@@ -14,33 +12,18 @@ let collageInProgress = false,
     move2usbled,
     copySucess = false;
 
+const API_DIR_NAME = 'api';
+const API_FILE_NAME = 'config.php';
 const SYNC_DESTINATION_DIR = 'photobooth-pic-sync';
 let rotaryClkPin, rotaryDtPin;
-const { execSync, spawnSync } = require('child_process');
+const {execSync, spawnSync} = require('child_process');
 const path = require('path');
-const { pid: PID, platform: PLATFORM } = process;
+const {pid: PID, platform: PLATFORM} = process;
 
 /* LOGGING FUNCTION */
 const log = function (...optionalParams) {
     console.log('[', new Date().toISOString(), ']:', ` Remote Buzzer Server [${PID}]:`, ...optionalParams);
 };
-
-/* SOURCE PHOTOBOOTH CONFIG */
-/*const {execSync} = require('child_process');*/
-let cmd = 'bin/photobooth photobooth:config:list json';
-let stdout = execSync(cmd).toString();
-const config = JSON.parse(stdout);
-
-/* WRITE PROCESS PID FILE */
-const pidFilename = config.foldersAbs.tmp + '/remotebuzzer_server.pid';
-
-fs.writeFile(pidFilename, parseInt(PID, 10).toString(), function (err) {
-    if (err) {
-        throw new Error('Unable to write PID file [' + pidFilename + '] - ' + err.message);
-    }
-
-    log('PID file created [', pidFilename, ']');
-});
 
 /* HANDLE EXCEPTIONS */
 process.on('uncaughtException', function (err) {
@@ -56,8 +39,26 @@ process.on('uncaughtException', function (err) {
     process.exit();
 });
 
+/* SOURCE PHOTOBOOTH CONFIG */
+/*const {execSync} = require('child_process');*/
+let cmd = `cd ${API_DIR_NAME} && php ./${API_FILE_NAME}`;
+let stdout = execSync(cmd).toString();
+const config = JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf(';')));
+
+/* WRITE PROCESS PID FILE */
+const pidFilename = config.foldersJS.tmp + '/remotebuzzer_server.pid';
+const fs = require('fs');
+
+fs.writeFile(pidFilename, parseInt(PID, 10).toString(), function (err) {
+    if (err) {
+        throw new Error('Unable to write PID file [' + pidFilename + '] - ' + err.message);
+    }
+
+    log('PID file created [', pidFilename, ']');
+});
+
 /* START HTTP & WEBSOCKET SERVER */
-const baseUrl = 'http://' + config.remotebuzzer.serverip + ':' + config.remotebuzzer.port;
+const baseUrl = 'http://' + config.webserver.ip + ':' + config.remotebuzzer.port;
 log('Server starting on ' + baseUrl);
 
 function photoboothAction(type) {
@@ -192,7 +193,6 @@ function photoboothAction(type) {
 const requestListener = function (req, res) {
     function sendText(content, contentType) {
         res.setHeader('Content-Type', contentType || 'text/plain');
-        res.setHeader('Access-Control-Allow-Origin', '*');
         res.writeHead(200);
         res.end(content);
     }
@@ -1277,7 +1277,7 @@ function move2usbAction() {
     const parsedConfig = parseConfig();
     log('USB target ', ...parsedConfig.drive);
 
-    const getDriveInfo = ({ drive }) => {
+    const getDriveInfo = ({drive}) => {
         let json = null;
         let device = false;
 
@@ -1337,7 +1337,7 @@ function move2usbAction() {
         return drive;
     };
 
-    const startSync = ({ dataAbsPath, drive }) => {
+    const startSync = ({dataAbsPath, drive}) => {
         if (!fs.existsSync(dataAbsPath)) {
             log(`ERROR: Folder [${dataAbsPath}] does not exist!`);
 
@@ -1442,7 +1442,7 @@ function move2usbAction() {
         }
     };
 
-    const deleteFiles = ({ dataAbsPath }) => {
+    const deleteFiles = ({dataAbsPath}) => {
         if (!fs.existsSync(dataAbsPath)) {
             log(`ERROR: Folder [${dataAbsPath}] does not exist!`);
 
@@ -1485,7 +1485,7 @@ function move2usbAction() {
         stdout = execSync(cmd);
     };
 
-    const deleteDatabase = ({ dataAbsPath, dbName }) => {
+    const deleteDatabase = ({dataAbsPath, dbName}) => {
         if (!fs.existsSync(dataAbsPath)) {
             log(`ERROR: Folder [${dataAbsPath}] does not exist!`);
 
@@ -1545,7 +1545,7 @@ function move2usbAction() {
     unmountDrive();
 
     if (copySucess && config.remotebuzzer.move2usb == 'move') {
-        deleteFiles({ dataAbsPath: parsedConfig.dataAbsPath });
+        deleteFiles({dataAbsPath: parsedConfig.dataAbsPath});
     } else {
         log('[Info] move2USB mode "copy" or Sync unsuccessful. No files will be deleted.');
     }

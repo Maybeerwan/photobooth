@@ -1,10 +1,8 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\DataLogger;
-
 header('Content-Type: application/json');
+
+require_once '../lib/config.php';
+require_once '../lib/log.php';
 
 $cmd = 'python3 cameracontrol.py';
 if ($_POST['chromaImage']) {

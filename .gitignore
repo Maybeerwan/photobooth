@@ -6,16 +6,22 @@ config/*
 data/
 digicamcontrol/
 HEAD
+faq/faq.md.php
 manual/faq.*
 node_modules/
+package-lock.json
 private/*
 !private/README.md
 resources/css/*
 !resources/css/README.md
 resources/js/*
 !resources/js/README.md
-resources/revisions.json
+src/sass/custom_chromacapture.css
+src/sass/custom_chromakeying.css
+src/sass/custom_live_chromakeying.css
+src/sass/custom_style.scss
 stats
+template/custom.template.php
 trash
 vendor/PhotoSwipe/
 vendor/simple-translator/
@@ -27,26 +33,10 @@ vendor/simple-translator/
 .skip_welcome
 .vscode
 venv/
-yarn.lock
-
-# tooling
-tools/*/vendor
-
-# php-cs-fixer
-.php-cs-fixer.cache
-
-# phplint
-.phplint.cache
-
-# phpunit
-.phpunit.result.cache
 
 # ignore some IDE and OS files
-.ddev/
 *.iml
 *.ipr
 *.iws
 .idea/
 **/.DS_Store
-
-/vendor/

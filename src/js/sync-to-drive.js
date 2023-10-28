@@ -1,14 +1,16 @@
 /* This script needs to be run from within the photobooth directory */
 
 /* Imports */
-const { execSync, spawn } = require('child_process');
+const {execSync, spawn} = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const events = require('events');
 
 /* Variables */
+const API_DIR_NAME = 'api';
+const API_FILE_NAME = 'config.php';
 const SYNC_DESTINATION_DIR = 'photobooth-pic-sync';
-const { pid: PID, platform: PLATFORM } = process;
+const {pid: PID, platform: PLATFORM} = process;
 const myEmitter = new events.EventEmitter();
 let rsyncSemaphore = null;
 let rsyncStartTime = 0;
@@ -20,11 +22,12 @@ const log = function (...optionalParams) {
 };
 
 const getConfigFromPHP = () => {
+    const cmd = `cd ${API_DIR_NAME} && php ./${API_FILE_NAME}`;
+
     try {
-        const cmd = 'bin/photobooth photobooth:config:list json';
         const stdout = execSync(cmd).toString();
 
-        return JSON.parse(stdout);
+        return JSON.parse(stdout.slice(stdout.indexOf('{'), stdout.lastIndexOf(';')));
     } catch (err) {
         log('ERROR: Unable to load photobooth config', err);
     }
@@ -49,7 +52,7 @@ const parseConfig = (config) => {
     return null;
 };
 
-const getDriveInfo = ({ drive }) => {
+const getDriveInfo = ({drive}) => {
     let json = null;
     let device = false;
 
@@ -109,7 +112,7 @@ const mountDrive = (drive) => {
     return drive;
 };
 
-const startSync = ({ dataAbsPath, drive }) => {
+const startSync = ({dataAbsPath, drive}) => {
     if (!fs.existsSync(dataAbsPath)) {
         log(`ERROR: Folder [${dataAbsPath}] does not exist!`);
 
@@ -175,7 +178,7 @@ const startSync = ({ dataAbsPath, drive }) => {
 
 const writePIDFile = (filename) => {
     try {
-        fs.writeFileSync(filename, parseInt(PID, 10).toString(), { flag: 'w' });
+        fs.writeFileSync(filename, parseInt(PID, 10).toString(), {flag: 'w'});
         log(`PID file created [${filename}]`);
     } catch (err) {
         throw new Error(`Unable to write PID file [${filename}] - ${err.message}`);
@@ -220,7 +223,7 @@ const parsedConfig = parseConfig(phpConfig);
 log('USB target ', ...parsedConfig.drive);
 
 /* WRITE PROCESS PID FILE */
-writePIDFile(path.join(phpConfig.foldersAbs.tmp, 'synctodrive_server.pid'));
+writePIDFile(path.join(phpConfig.foldersJS.tmp, 'synctodrive_server.pid'));
 
 /* INSTALL HANDLER TO MONITOR CHILD PROCESS EXITS */
 myEmitter.on('rsync-completed', (childPID) => {

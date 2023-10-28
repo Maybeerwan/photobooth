@@ -1,6 +1,6 @@
 <?php
-
-require_once '../lib/boot.php';
+session_start();
+require_once '../lib/config.php';
 
 // includes
 include_once 'keypad.php';
@@ -10,7 +10,8 @@ if (isset($_POST['controller']) and $_POST['controller'] == 'keypadLogin') {
     $userPin = $_POST['pin'];
 
     $keypad = new Keypad();
-    $return = $keypad->keypadLogin($userPin, $config['login']);
+    $return = $keypad->keypadLogin($userPin, $config['login']['pin']);
 
     echo json_encode($return);
 }
+?>

@@ -1,16 +1,20 @@
 <?php
+$fileRoot = '../';
 
-require_once '../lib/boot.php';
+require_once $fileRoot . 'lib/config.php';
+require_once $fileRoot . 'lib/filter.php';
+require_once $fileRoot . 'lib/applyEffects.php';
+require_once $fileRoot . 'lib/image.php';
 
-use Photobooth\Enum\ImageFilterEnum;
-use Photobooth\Image;
-use Photobooth\Utility\ImageUtility;
+$demoPath = __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'resources/img/demo';
+$demoFolder = realpath($demoPath);
+$demoImage = 'adi-goldstein-Hli3R6LKibo-unsplash.jpg';
 
 $imageHandler = new Image();
 $imageHandler->debugLevel = $config['dev']['loglevel'];
 $imageHandler->imageModified = false;
 
-$imageResource = $imageHandler->createFromImage(ImageUtility::getRandomImageFromPath('resources/img/demo'));
+$imageResource = $imageHandler->createFromImage($demoFolder . DIRECTORY_SEPARATOR . $demoImage);
 if (!$imageResource) {
     throw new Exception('Error creating image resource.');
 }
@@ -35,7 +39,7 @@ if ($config['picture']['flip'] !== 'off') {
 $image_filter = $config['filters']['defaults'];
 if ($image_filter) {
     try {
-        ImageUtility::applyFilter(ImageFilterEnum::tryFrom($image_filter), $imageResource);
+        applyFilter($image_filter, $imageResource);
         $imageHandler->imageModified = true;
     } catch (Exception $e) {
         throw new Exception('Error applying image filter.');

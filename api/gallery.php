@@ -1,8 +1,7 @@
 <?php
 
-require_once '../lib/boot.php';
-
-use Photobooth\DatabaseManager;
+require_once '../lib/config.php';
+require_once '../lib/db.php';
 
 $database = new DatabaseManager();
 $database->db_file = DB_FILE;

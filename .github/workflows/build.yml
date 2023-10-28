@@ -15,43 +15,21 @@ jobs:
   build:
     strategy:
       matrix:
-        php: ['8.2']
-        node: [18]
+        version: [14, 16]
         os: [ubuntu-latest, macos-11]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository and submodules
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Setup PHP ${{ matrix.php }}
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          tools: composer:v2
-
-      - name: Setup node ${{ matrix.node }}
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node }}
-
+          node-version: ${{ matrix.version }}
       - name: Install modules
-        run: npm install
-
+        run: yarn install
       - name: Build
-        run: npm run build
-
-      - name: PHP Coding Guidelines
-        run: composer cgl:ci
-
-      - name: PHP Lint
-        run: composer lint
-
-      - name: PHP Unit
-        run: composer phpunit
-
-      - name: Status
-        run: |
-          git status
-          git status | grep -q "nothing to commit, working tree clean"
+        run: yarn build
+      - name: Get git status
+        run: git status

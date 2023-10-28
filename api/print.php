@@ -1,13 +1,11 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\DataLogger;
-use Photobooth\PrintManager;
-use Photobooth\Image;
-use Photobooth\Utility\PathUtility;
-
 header('Content-Type: application/json');
+
+require_once '../lib/config.php';
+require_once '../lib/db.php';
+require_once '../lib/printdb.php';
+require_once '../lib/image.php';
+require_once '../lib/log.php';
 
 $Logger = new DataLogger(PHOTOBOOTH_LOG);
 $Logger->addLogData(['php' => basename($_SERVER['PHP_SELF'])]);
@@ -84,15 +82,13 @@ if (!file_exists($filename_print)) {
             }
         }
 
-        if ($config['print']['qrcode']) {
+        if ($config['print']['qrcode'] && $imageHandler->qrAvailable) {
             // create qr code
-            if ($config['ftp']['enabled'] && $config['ftp']['useForQr']) {
-                $imageHandler->qrUrl = $config['ftp']['processedTemplate'] . DIRECTORY_SEPARATOR . $filename;
-            } elseif ($config['qr']['append_filename']) {
-                $imageHandler->qrUrl = PathUtility::getPublicPath($config['qr']['url'] . $filename, true);
-            } else {
-                $imageHandler->qrUrl = PathUtility::getPublicPath($config['qr']['url'], true);
+            $imageHandler->qrUrl = $config['qr']['url'];
+            if ($config['qr']['append_filename']) {
+                $imageHandler->qrUrl = $config['qr']['url'] . $filename;
             }
+            $imageHandler->qrEcLevel = $config['qr']['ecLevel'];
             $imageHandler->qrSize = $config['print']['qrSize'];
             $imageHandler->qrMargin = $config['print']['qrMargin'];
             $imageHandler->qrColor = $config['print']['qrBgColor'];
@@ -146,7 +142,7 @@ if (!file_exists($filename_print)) {
         imagedestroy($source);
     } catch (Exception $e) {
         // Try to clear cache
-        if ($source instanceof GdImage) {
+        if (is_resource($source)) {
             imagedestroy($source);
         }
         // log error and die

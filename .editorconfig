@@ -3,31 +3,9 @@
 # top-most EditorConfig file
 root = true
 
-# Unix-style newlines with a newline ending every file
-[*]
+[src/js/**.js]
 charset = utf-8
-end_of_line = lf
 indent_style = space
 indent_size = 4
 insert_final_newline = true
 trim_trailing_whitespace = true
-
-# CSS
-[*.{scss,css}]
-indent_size = 2
-
-# stylelint
-[.stylelintrc]
-indent_size = 2
-
-# package.json
-[package.json]
-indent_size = 2
-
-# .yaml
-[*.{yml,yaml}]
-indent_size = 2
-
-# .htaccess
-[.htaccess]
-indent_style = tab

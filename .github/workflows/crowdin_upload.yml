@@ -16,16 +16,16 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
 
     - name: crowdin action
-      uses: crowdin/github-action@v1.13.1
+      uses: crowdin/github-action@1.4.6
       with:
         upload_sources: true
         upload_translations: false
         push_translations: false
         download_translations: false
-        config: 'crowdin_config.yml'
+        config: 'crowdin/config.yml'
       env:
         CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
         CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}

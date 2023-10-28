@@ -1,60 +1,42 @@
 <?php
+$fileRoot = '../';
 
-require_once '../lib/boot.php';
+require_once $fileRoot . 'lib/config.php';
 
-use Photobooth\Service\AssetService;
-use Photobooth\Service\LanguageService;
-use Photobooth\Utility\ComponentUtility;
-use Photobooth\Utility\PathUtility;
-
-$languageService = LanguageService::getInstance();
-$assetService = AssetService::getInstance();
 $pageTitle = $config['ui']['branding'] . ' Preview-Test';
-$mainStyle = $config['ui']['style'] . '_style.css';
+$mainStyle = 'test_preview.css';
 $photoswipe = false;
 $remoteBuzzer = false;
+$chromaKeying = false;
 
-include PathUtility::getAbsolutePath('template/components/main.head.php');
+include($fileRoot . 'template/components/main.head.php');
 ?>
 
 <body>
-    <?php if ($config['preview']['showFrame'] && !empty($config['picture']['frame'])): ?>
-    <img id="picture--frame" class="<?php echo $config['preview']['flip']; ?> <?php echo $config['preview']['style']; ?>" src="<?php echo $config['picture']['frame']; ?>" alt="pictureFrame" />
-    <?php endif; ?>
-    <?php if ($config['preview']['showFrame'] && !empty($config['collage']['frame'])): ?>
-    <img id="collage--frame" class="<?php echo $config['preview']['flip']; ?> <?php echo $config['preview']['style']; ?>" src="<?php echo $config['collage']['frame']; ?>" alt="collageFrame" />
-    <?php endif; ?>
+    <img id="picture--frame" class="<?php echo $config['preview']['flip']; ?> <?php echo $config['preview']['style']; ?>" src="<?php echo $config['picture']['htmlframe']; ?>" alt="pictureFrame" />
+    <img id="collage--frame" class="<?php echo $config['preview']['flip']; ?> <?php echo $config['preview']['style']; ?>" src="<?php echo $config['collage']['htmlframe']; ?>" alt="collageFrame" />
     <video id="video--view" class="<?php echo $config['preview']['flip']; ?> <?php echo $config['preview']['style']; ?>" autoplay playsinline></video>
 
     <div id="wrapper">
         <div id="ipcam--view" class="<?php echo $config['preview']['style']; ?>"></div>
+
         <div id="no_preview">
-            <?=$languageService->translate('no_preview')?>
+            <span data-i18n="no_preview"></span>
         </div>
-        <div class="buttonbar buttonbar--bottom">
-<?php
 
-echo ComponentUtility::renderButton('startPreview', 'fa fa-play', 'startPreview');
-echo ComponentUtility::renderButton('stopPreview', 'fa fa-stop', 'stopPreview');
-if ($config['preview']['showFrame'] && !empty($config['picture']['frame'])) {
-    echo ComponentUtility::renderButton('showPictureFrame', 'fa fa-eye', 'showPictureFrame');
-}
-if ($config['preview']['showFrame'] && !empty($config['collage']['frame'])) {
-    echo ComponentUtility::renderButton('showCollageFrame', 'fa fa-eye', 'showCollageFrame');
-}
-if ($config['preview']['showFrame'] && !empty($config['picture']['frame']) || $config['preview']['showFrame'] && !empty($config['collage']['frame'])) {
-    echo ComponentUtility::renderButton('hideFrame', 'fa fa-eye-slash', 'hideFrame');
-}
-echo ComponentUtility::renderButtonLink('back', 'fa fa-chevron-left', PathUtility::getPublicPath('test'));
-
-?>
+		<div class="buttonbar">
+			<a href="#" class="<?php echo $btnClass; ?> startPreview"><span data-i18n="startPreview"></span></a>
+			<a href="#" class="<?php echo $btnClass; ?> stopPreview"><span data-i18n="stopPreview"></span></a>
+			<a href="#" class="<?php echo $btnClass; ?> showPictureFrame"><span data-i18n="showPictureFrame"></span></a>
+			<a href="#" class="<?php echo $btnClass; ?> showCollageFrame"><span data-i18n="showCollageFrame"></span></a>
+			<a href="#" class="<?php echo $btnClass; ?> hideFrame"><span data-i18n="hideFrame"></span></a>
         </div>
     </div>
 
-    <?php include PathUtility::getAbsolutePath('template/components/main.footer.php'); ?>
+    <?php include($fileRoot . 'template/components/main.footer.php'); ?>
 
-    <script src="<?=$assetService->getUrl('resources/js/preview.js')?>"></script>
-    <script src="<?=$assetService->getUrl('resources/js/test_preview.js')?>"></script>
+    <script type="text/javascript" src="<?=$fileRoot?>resources/js/preview.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
+    <script type="text/javascript" src="<?=$fileRoot?>resources/js/test_preview.js?v=<?php echo $config['photobooth']['version']; ?>"></script>
 
 </body>
 </html>

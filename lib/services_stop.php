@@ -1,9 +1,9 @@
 <?php
+/* check PID file and if found, kill process and delete PID file */
 
-// check PID file and if found, kill process and delete PID file
+require_once __DIR__ . '/config.php';
 
-function killProcessIfActive($pName, $pidFile, $logfileName, $killSig)
-{
+function killProcessIfActive($pName, $pidFile, $logfileName, $killSig) {
     global $config;
 
     exec('pgrep -f ' . $pName, $pids);
@@ -26,17 +26,17 @@ function killProcessIfActive($pName, $pidFile, $logfileName, $killSig)
     }
 }
 
-// can be killed if active independent of $config['remotebuzzer']['startserver']
 killProcessIfActive(
     'remotebuzzer_server.js',
-    $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . 'remotebuzzer_server.pid',
+    '..' . DIRECTORY_SEPARATOR . $config['foldersRoot']['tmp'] . DIRECTORY_SEPARATOR . 'remotebuzzer_server.pid',
     $config['remotebuzzer']['logfile'],
     9
 );
-
 killProcessIfActive(
     'sync-to-drive.js',
-    $config['foldersAbs']['tmp'] . DIRECTORY_SEPARATOR . 'synctodrive_server.pid',
+    '..' . DIRECTORY_SEPARATOR . $config['foldersRoot']['tmp'] . DIRECTORY_SEPARATOR . 'synctodrive_server.pid',
     $config['synctodrive']['logfile'],
     15
 );
+
+?>

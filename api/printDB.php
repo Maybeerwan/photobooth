@@ -1,10 +1,7 @@
 <?php
-
-require_once '../lib/boot.php';
-
-use Photobooth\PrintManager;
-
 header('Content-Type: application/json');
+
+require_once '../lib/printdb.php';
 
 $action = $_GET['action'];
 
